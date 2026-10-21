@@ -258,6 +258,12 @@ MANUAL = {
 # picked up an unrelated nearby vote event) rather than real agenda items --
 # see spot-check pass. Dropped from the published dataset.
 DROP_TITLES = {
+    # lettered companion headings of a grouped item (a tour, a study-session heading, a
+    # "Conduct Special Election;" line): not an action the Council voted on
+    'Tour of the Enterprise District (Formerly Site B) at Alameda Point; and',
+    'Study Session to Consider Establishing Mixed Use (MX) Zoning District Guidelines;',
+    'Provide Comments on the Draft Main Street Neighborhood Specific Plan for Alameda Point',
+    'Conduct Special Election;',
     "Zac Thayer, Alameda, made comments",
     "Zac Thayer, Alameda, offered comments",
     'Paula Rainey, League of Women Voters, invited people to attend the upcoming speaker series: "Is Free Speech a Core Value of Our Democracy?" starting April 8th at the Main Library',

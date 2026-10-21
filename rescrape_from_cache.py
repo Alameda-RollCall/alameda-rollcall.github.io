@@ -24,6 +24,18 @@ def main():
     matters = json.load(open(os.path.join(CACHE, "matters_list.json")))
     print(f"{len(matters)} cached matters")
 
+    # Keep each vote's id stable across rebuilds (ids are permalinks): a vote that
+    # was already in the previous output keeps its id; a newly parsed vote gets the
+    # next unused index in its matter instead of shifting everything after it.
+    prev_ids, max_k = {}, {}
+    if os.path.exists(OUT):
+        for pv in json.load(open(OUT))["votes"]:
+            pm, _, pk = pv["id"][1:].partition("-")
+            prev_ids.setdefault((pm, pv["date"], pv["title"]), []).append(int(pk))
+            max_k[pm] = max(max_k.get(pm, -1), int(pk))
+    for ks in prev_ids.values():
+        ks.sort()
+
     out_votes = []
     missing_cache = 0
     for n, m in enumerate(matters, 1):
@@ -38,9 +50,14 @@ def main():
             continue
         matter_file = cached.get('file') or m.get('MatterFile', '')
         url = f"https://alameda.legistar.com/gateway.aspx?M=L&ID={mid}"  # MatterId, not file number
-        for k, v in enumerate(sv.parse_minutes_text(plain, SINCE, matter_file=matter_file)):
+        for v in sv.parse_minutes_text(plain, SINCE, matter_file=matter_file):
             if len(v["votes"]) < MIN_VOTERS:
                 continue
+            old = prev_ids.get((str(mid), v["date"], v["title"]))
+            if old:
+                k = old.pop(0)
+            else:
+                max_k[str(mid)] = k = max_k.get(str(mid), -1) + 1
             v.update({
                 "id": f"m{mid}-{k}",
                 "summary": sv.summarize_stub(v["title"]),

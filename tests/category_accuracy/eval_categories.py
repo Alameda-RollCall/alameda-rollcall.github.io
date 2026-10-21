@@ -26,15 +26,21 @@ def main(n):
     votes = {v["id"]: v for v in json.load(open(os.path.join(ROOT, "votes.json")))["votes"]}
     exact = ok = 0
     misses = []
+    gone = 0   # sampled votes a later parser fix removed (duplicate/spurious rows)
     for i, vid in enumerate(ids, 1):
         primary, alts = labels.L[i]
+        if vid not in votes:
+            gone += 1
+            continue
         got = votes[vid]["category"]
         exact += got == primary
         good = got == primary or got in alts
         ok += good
         if not good:
             misses.append((i, got, primary, sorted(alts), votes[vid]["title"][:70]))
-    total = len(ids)
+    total = len(ids) - gone
+    if gone:
+        print(f"  ({gone} sampled votes no longer exist and are skipped)")
     print(f"sample {n}: exact {exact}/{total} = {100*exact/total:.0f}%   acceptable {ok}/{total} = {100*ok/total:.0f}%")
     for i, got, primary, alts, title in misses:
         print(f"  {i:3d}. got {got:24s} expected {primary} {alts or ''} | {title}")

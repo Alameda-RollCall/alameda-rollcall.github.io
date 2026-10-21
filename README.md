@@ -86,7 +86,7 @@ Clerk's minutes, filed as a "Minutes of ..." matter. The pipeline:
 6. **Videos and transcripts** (optional; run after steps 3 and 4, since `annotate.py` rewrites `votes.json`):
    - **`fetch_videos.py`** adds `meeting_videos` (date to Granicus clip ids) from
      Legistar's events API in one request. The site's "watch video" link opens the
-     whole meeting; 308 of 309 meeting dates have a recording and two have two clips.
+     whole meeting; every meeting date has a recording and two have two clips.
    - **`fetch_granicus_index.py`** + **`match_video_items.py`**: Granicus clip pages
      list the agenda items with start times for about 2013 to early 2021 (178
      meetings; none after that, except a few). A vote is matched to an entry by the
@@ -199,6 +199,7 @@ hand-written override files.
 
 | Path | What it is |
 |---|---|
+| `tests/data_audit/` | Independent audit of `votes.json` against the clerk's minutes (missed votes, names, roll calls, results); see `tests/README.md` |
 | `index.html`, `votes.json` | The site and its data |
 | `refresh_cache.py`, `rescrape_from_cache.py`, `scrape_votes.py` | Fetch and parse the minutes |
 | `annotate_pipeline/` | Categories, tags and summaries (`annotate.py`, `summary_text.py`, override tables) |

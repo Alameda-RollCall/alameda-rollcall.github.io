@@ -163,8 +163,11 @@ def paged(url, flt=None, order=None, page=1000):
 # line (clerk switched to Title Case in 2026) immediately followed by a date
 # line like "TUESDAY- -FEBRUARY 4, 2025- -7:00 P.M.". Requiring the date line
 # keeps consent items titled "Minutes of the ..." from starting a section.
+# The clerk's header can wrap over several lines before the "TUESDAY- -SEPTEMBER 5, 2023" line
+# ("MINUTES OF THE SPECIAL JOINT MEETING OF THE CITY COUNCIL AND / SUCCESSOR AGENCY TO THE /
+# COMMUNITY IMPROVEMENT COMMISSION (SACIC) / TUESDAY- -SEPTEMBER 5, 2023").
 SECTION_RE = re.compile(
-    r"^Minutes of the[^\r\n]*\r?\n[^\r\n]*?-\s*-\s*[A-Za-z]+\s+\d{1,2},\s+\d{4}",
+    r"^Minutes of the[^\r\n]*\r?\n(?:[^\r\n]*\r?\n){0,3}?[^\r\n]*?-\s*-\s*[A-Za-z]+\s+\d{1,2},\s+\d{4}",
     re.I | re.M)
 DATE_RE = re.compile(r"([A-Za-z]+)-\s*-\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})\s*-\s*-")
 # Fallback for the rare header with no leading weekday name.
@@ -177,6 +180,16 @@ WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
 ITEM_RE = re.compile(
     r"\((\*?)\d{2}-(?P<tag>(?:[\dA-Z_/ \t-]|[Cc]ontinued|[Rr]eopened)*)\)")
 
+# The clerk's disposition word right after an item's title: "... Not adopted." etc.
+NEG_STATUS_RE = re.compile(
+    r"[.\"”]\s+(?:Not\s+(?:adopted|introduced|approved|accepted|finally\s+passed|heard)|Failed|Denied|Rejected|"
+    r"Withdrawn|Continued)\b", re.I)
+POS_STATUS_RE = re.compile(
+    r"[.\"”]\s+(?:Adopted|Introduced|Approved|Accepted|Finally\s+passed)\b", re.I)
+
+# A lettered companion marker: "(13-409 A)", "(21-   A)", "(17-   A CC)".
+SIBLING_TAG_RE = re.compile(r"^[\d\s_/-]*\b[A-Z]\b(?:\s*CC)?\s*$")
+
 # Markers tagged only for a sibling body ("(21-  SACIC)", "(*21-01 APFA)") are
 # not Council votes: they still end the previous item's segment but aren't emitted.
 OTHER_BODY_RE = re.compile(r"\b(?:SACIC|APFA|CAFA|APIC|ACIC|PUB)\b")
@@ -185,8 +198,25 @@ OTHER_BODY_RE = re.compile(r"\b(?:SACIC|APFA|CAFA|APIC|ACIC|PUB)\b")
 # "... Ayes: 2. Noes: 3." -- the clerk's stated totals after the names
 STATED_TALLY_RE = re.compile(r"Ayes:\s*(\d+)[.;]?\s*Noes:\s*(\d+)", re.I)
 
+# Clerk variants handled: "carried by the by unanimous" (typo), "the ordinance was
+# adopted by unanimous voice vote - 4", "the motion by unanimous voice vote - 4",
+# "by a unanimous voice vote: Ayes - 5", a count written ".5", and a clause with
+# no count at all ("carried by unanimous voice vote. [Absent: X - 1.]"). With no
+# outcome word the clause must be about "the motion/matter/..." (UNAN_SUBJECT_RE),
+# so narrative like "recommended by unanimous vote of the Planning Board" is skipped.
 UNANIMOUS_RE = re.compile(
-    r"\b(?P<outcome>carried|failed)\s+by\s+(?:the\s+by\s+)?unanimous[^.]*?[-–—]\s*(?P<n>\d+)", re.I)  # clerk typo: "by the by unanimous"
+    r"\b(?:(?P<outcome>carried|failed|passed|adopted|approved)\b[^.]{0,20}?\s+)?"
+    r"by\s+(?:the\s+|a\s+)?(?:by\s+(?:the\s+)?)?unanimous\b"
+    r"[^.\n]*?(?:[-–—]\s*\.?(?P<n>\d+)|(?=\.\s|\.$|\[|$))", re.I)
+# "carried by the following voice vote - 5." (a count with no names)
+FOLLOWING_COUNT_RE = re.compile(
+    r"\b(?P<outcome>carried|failed|passed|adopted|approved)\b[^.:]{0,60}?by\s+the\s+following[^:.\n]{0,30}?votes?\s*[-–]\s*(?P<n>\d+)", re.I)
+UNAN_SUBJECT_RE = re.compile(r"(?:motion|matter|resolution|ordinance|item|which)\s*,?\s*$", re.I)
+# "carried by unanimous roll call vote: Councilmember A: Aye; ... Mayor B: Aye. Ayes - 5."
+# (the period after the last Aye defeats UNANIMOUS_RE's sentence-bounded tail).
+UNANIMOUS_ROLL_RE = re.compile(
+    r"\b(?P<outcome>carried|failed|passed|adopted|approved)\b[^.]{0,20}?\s+by\s+(?:the\s+|a\s+)?unanimous\s+roll\s+call\s+vote\s*:"
+    r"[^\n]{0,400}?\bAyes?\s*[-–:]\s*(?P<n>\d+)", re.I)
 
 # "... carried by the following roll call vote: Ayes: ... - 4; Noes: ... - 1."
 # Also closed-session announcements ("approved the ... by the following voice
@@ -194,19 +224,19 @@ UNANIMOUS_RE = re.compile(
 # vote:").
 FOLLOWING_RE = re.compile(
     r"\b(?P<verb>carried|failed|passed|approved|adopted|provided\s+direction)\b[^.:]{0,90}?"
-    r"by\s+the\s+following[^:]{0,40}?votes?:\s*", re.I)
+    r"by\s+(?:(?:the\s+)?follow(?:ing)?|(?:a\s+)?roll\s+call)[^:]{0,40}?votes?\s*:\s*", re.I)  # "follow", "by following" are clerk typos
 
 # Vote-clause labels. The clerk writes both "Ayes: Councilmembers X, Y - 4"
 # and the reversed "Ayes: 4 - Councilmembers X, Y", so chunks are delimited by
 # the labels themselves and names are pulled from whatever sits between them.
 LABEL_RE = re.compile(
-    r"\b(?P<label>Ayes?|Noes?|Nays?|Abstentions?|Abstained|Abstain|Absent|Recused?):", re.I)
+    r"\b(?P<label>Ayes?|Noes?|No|Nays?|Abstentions?|Abstained|Abstain|Absent|Recused?)(?:\s*[-–]\s*\d+)?\s*:", re.I)
 
 # Group/per-name roll calls: "Councilmembers A, B and Mayor C: Ayes - 4" or
 # "Daysog: No"
 GROUP_RE = re.compile(
-    r"(?P<who>[A-Z][^:;.]{0,140}?):\s*(?P<label>Ayes?|Yes|Noe?s?|Nays?|Abstentions?|"
-    r"Abstained|Abstain|Absent|Recused?)\b", re.S)
+    r"(?P<who>[A-Z][^:;.]{0,140}?):\s*(?P<label>(?i:Ayes?|Yes|Noe?s?|Nays?|Abstentions?|"
+    r"Abstained|Abstain|Absent|Recused?))\b", re.S)
 
 PART_VALUE_WORDS = {
     "aye": "aye", "ayes": "aye", "yes": "aye",
@@ -245,8 +275,27 @@ CONSENT_MOVE_RE = re.compile(
     re.I)
 
 
+# Misspellings in the clerk's vote clauses and roll calls (each found in the minutes).
+NAME_TYPOS = [
+    (re.compile(r"\bKnow\s+White\b"), "Knox White"),
+    (re.compile(r"\bHerera\b"), "Herrera"),
+    (re.compile(r"\b(?:Aschraft|Ascraft|Ashcarft|Ashcroft)\b"), "Ashcraft"),
+    (re.compile(r"\b(?:Dayosg|Daysg)\b"), "Daysog"),
+    (re.compile(r"\bMatarrase\b"), "Matarrese"),
+    (re.compile(r"\bVela\b"), "Vella"),
+    (re.compile(r"\bSpener\b"), "Spencer"),
+]
+
+
+def _fix_name_typos(text):
+    for rx, fix in NAME_TYPOS:
+        text = rx.sub(fix, text)
+    return text
+
+
 def members_in(text):
     """Map a run of clerk prose to the member shorts it mentions."""
+    text = _fix_name_typos(text or "")
     # Clerk text sometimes breaks a two-word surname across a line or uses a
     # non-breaking space ("Ezzy\nAshcraft"), so let any whitespace run match.
     return [info[0] for frag, info in MEMBERS.items()
@@ -331,7 +380,8 @@ def parse_roll_call(section):
     m = re.search(r"Roll Call\s*[-–]\s*Present:\s*([^.]*?)\s*[-–]\s*\d+\s*\.", section, re.I)
     if m:
         present = members_in(m.group(1))
-        m2 = re.search(r"Absent:\s*([^.]*?)\s*\.", section[m.end():m.end() + 200], re.I)
+        # (a teleconference-address note can sit between "Present" and "Absent")
+        m2 = re.search(r"Absent:\s*([^.]*?)\s*\.", section[m.end():m.end() + 600], re.I)
         if m2 and "none" not in m2.group(1).lower():
             absent = members_in(m2.group(1))
         # A member who wasn't there for the opening roll call but is noted
@@ -340,13 +390,25 @@ def parse_roll_call(section):
         # to `present` so their later votes aren't silently dropped for
         # lacking a present-list entry. (Any votes taken before they
         # actually arrived are a separate, rarer case not handled here.)
-        m3 = re.search(r"\[Note:[^\]]*?\]", section[m.end():m.end() + 300], re.I)
+        m3 = re.search(r"\[Note:[^\]]*?\]", section[m.end():m.end() + 700], re.I)
         if m3:
             for am in re.finditer(r"([A-Z][\w'\-]*(?:\s+[A-Z][\w'\-]*)?)\s+arrived", m3.group(0)):
                 for short in members_in(am.group(1)):
                     if short not in present:
                         present.append(short)
     return present, absent
+
+
+def roll_call_arrivals(section):
+    """Members the roll-call notes say arrived after the meeting began."""
+    m = re.search(r"Roll Call\s*[-–]\s*Present:\s*([^.]*?)\s*[-–]\s*\d+\s*\.", section, re.I)
+    late = set()
+    if m:
+        m3 = re.search(r"\[Note:[^\]]*?\]", section[m.end():m.end() + 700], re.I)
+        if m3:
+            for am in re.finditer(r"([A-Z][\w'\-]*(?:\s+[A-Z][\w'\-]*)?)\s+arrived", m3.group(0)):
+                late.update(members_in(am.group(1)))
+    return late
 
 
 def parse_parts(window, present):
@@ -373,6 +435,13 @@ def parse_parts(window, present):
     # declined ...") straight into the vote-clause attribution.
     positions = {}
     labels = list(LABEL_RE.finditer(window))
+    # "vote: Councilmembers A, B and Mayor C - 4. Noes: Councilmember D - 1." --
+    # the ayes carry no label; they are the names before the first label.
+    if labels and PART_VALUE_WORDS.get(labels[0].group("label").lower()) != "aye":
+        lead = window[:labels[0].start()]
+        if re.search(r"[-–]\s*\d+\s*\.?\s*$", lead.strip()):
+            for short in members_in(lead):
+                positions[short] = "aye"
     for i, lm in enumerate(labels):
         val = PART_VALUE_WORDS.get(lm.group("label").lower())
         if not val:
@@ -415,10 +484,11 @@ ABSENCE_BRACKET_RE = re.compile(r"\[(?:Absent|Recused?)\b[^\]\r\n]{0,150}\]", re
 # meeting." / "Vice Mayor Pryor recused herself from this item." These sit
 # anywhere in the item's segment, often before the vote clause they explain.
 RECUSAL_PROSE_RE = re.compile(
-    r"(?P<who>(?:Mayor|Vice Mayor|Councilmember)\s+[A-Z][\w'\-]*"
-    r"(?:,?\s+(?:and\s+)?(?:(?:Mayor|Vice Mayor|Councilmember)\s+)?[A-Z][\w'\-]*){0,3})"  # "X and Vice Mayor Y"
-    r"[^.]{0,100}?(?:recus\w*|left the (?:meeting|dais)|was absent for this item)",
-    re.I)
+    # Case-sensitive on purpose: with re.I the name list swallowed lowercase words
+    # ("Vella inquired whether Daysog's") and pinned the recusal on the wrong member.
+    r"(?P<who>(?:Mayor|Vice Mayor|Councilmembers?)\s+[A-Z][\w'\-]*(?:\s+[A-Z][\w'\-]*)?"
+    r"(?:,?\s+(?:and\s+)?(?:(?:Mayor|Vice Mayor|Councilmembers?)\s+)?[A-Z][\w'\-]*(?:\s+[A-Z][\w'\-]*)?){0,3})"  # "X and Vice Mayor Y"
+    r"[^.]{0,100}?(?i:recus\w*|left the (?:meeting|dais)|was absent for this item)")
 
 # Some clerks write the "Absent:"/"Abstentions:" clause as plain trailing
 # prose with no brackets at all, e.g. "... carried by unanimous voice vote -
@@ -454,6 +524,14 @@ def find_missing(text, candidates):
         # clerk noted a return shortly after.
         if re.search(r"\breturned\b", text[pm.end():pm.end() + 80], re.I):
             continue
+        # "Councilmember Vella inquired whether Councilmember Daysog's recusal ..."
+        # is a question about someone else, not Vella's recusal: the subject must be
+        # followed by the verb with no inquiry word or second name in between.
+        between = pm.group(0)[len(pm.group("who")):]
+        if members_in(between) or re.search(
+                r"\b(?:inquir\w*|ask\w*|whether|if|urged|request\w*|suggest\w*|question\w*|wonder\w*|"
+                r"advis\w*|should|could|must|not|mandated|required)\b", between, re.I):
+            continue
         label = "recused" if re.search(r"recus", pm.group(0), re.I) else "absent"
         for short in members_in(pm.group("who")):
             if short in candidates:
@@ -468,15 +546,37 @@ def find_missing(text, candidates):
 
 def vote_events(text, present, absent, ctx=""):
     """All attributable vote events in text, in order: [(result, positions), ...]"""
-    events = [("unan", m) for m in UNANIMOUS_RE.finditer(text)]
+    events = []
+    for m in list(UNANIMOUS_ROLL_RE.finditer(text)) + list(FOLLOWING_COUNT_RE.finditer(text)):
+        events.append(("unan", m))
+    for m in UNANIMOUS_RE.finditer(text):
+        if any(e[1].start() <= m.start() < e[1].end() for e in events):
+            continue  # already read as a roll-call clause
+        if not m.group("outcome") and not UNAN_SUBJECT_RE.search(text[max(0, m.start() - 30):m.start()]):
+            continue
+        # A count-less "carried by unanimous voice vote." only stands when the clerk
+        # follows it with the absentee/recusal bracket or an "Ayes - N" line; otherwise
+        # a later, fuller clause ("... by the following voice vote: Noes: ...") is the
+        # real result.
+        if not m.group("n") and not re.match(
+                r"\.?\s*(?:\[?\s*(?:Absent|Recused?)\b|Ayes?\s*[-–:]\s*\d)", text[m.end():m.end() + 60], re.I):
+            continue
+        events.append(("unan", m))
     events += [("foll", m) for m in FOLLOWING_RE.finditer(text)]
     events += [("tally", m) for m in TALLY_RE.finditer(text)]
     out = []
     for kind, m in sorted(events, key=lambda e: e[1].start()):
         if kind == "unan":
-            n = int(m.group("n"))
+            n = int(m.group("n")) if m.group("n") else None
             if n == len(present):
                 positions = {s: "aye" for s in present}
+            elif n is None:
+                # No count written: everyone present who isn't noted absent/recused voted aye.
+                pm = re.search(r"\r?\n\s*\r?\n", text[m.end():m.end() + 300])
+                window_end = m.end() + (pm.start() if pm else 300)
+                missing = find_missing(text[:window_end], present)
+                positions = {s: "aye" for s in present if s not in missing}
+                positions.update(missing)
             else:
                 # Stated tally is short of everyone present -- someone didn't
                 # vote. Never silently stamp all-present as aye; find who's
@@ -492,7 +592,13 @@ def vote_events(text, present, absent, ctx=""):
                 window_end = m.end() + (pm.start() if pm else 300)
                 missing = find_missing(text[:window_end], present)
                 remaining = [s for s in present if s not in missing]
-                if len(remaining) == n:
+                # Known clerk slip: "unanimous voice vote - 1. [Absent: X - 1.]" -- the
+                # absent count written where the vote count belongs.
+                absent_typo = bool(missing) and n == len(missing) and re.search(
+                    r"\[Absent:[^\]]*[-–]\s*%d\b" % n, text[m.end():window_end + 40])
+                if len(remaining) == n or absent_typo:
+                    if absent_typo and len(remaining) != n:
+                        print(f"  ! clerk count typo [{ctx}]: unanimous-{n} read as {len(remaining)}", file=sys.stderr)
                     positions = {s: "aye" for s in remaining}
                     positions.update(missing)
                 else:
@@ -502,7 +608,7 @@ def vote_events(text, present, absent, ctx=""):
                           f"unexplained members unattributed", file=sys.stderr)
                     positions = {s: "aye" for s in remaining} if len(remaining) <= n else {}
                     positions.update(missing)
-            outcome = m.group("outcome")
+            outcome = m.group("outcome") or "carried"
         elif kind == "tally":
             # "carried by 4-0"
             a, n = int(m.group("a")), int(m.group("n"))
@@ -525,6 +631,13 @@ def vote_events(text, present, absent, ctx=""):
             # parts live in the rest of the paragraph after the "vote:" anchor
             window = re.split(r"\r?\n\s*\r?\n", text[m.end():m.end() + 500])[0]
             positions = parse_parts(window, present)
+            bare = re.match(r"\s*(\d+)\s+Ayes?\b", window)
+            if bare and not any(v in ("aye", "no", "abstain") for v in positions.values()):
+                missing = find_missing(text[:m.end() + len(window)], present)
+                remaining = [s for s in present if s not in missing]
+                if len(remaining) == int(bare.group(1)):
+                    positions = {s: "aye" for s in remaining}
+                    positions.update(missing)
             # The trailing "[Absent: X]" bracket also lists members who
             # recused earlier in the item ("Councilmember X recused himself
             # ... and left the dais"); the prose is the more specific cue.
@@ -534,6 +647,21 @@ def vote_events(text, present, absent, ctx=""):
                     if label == "recused":
                         positions[s] = "recused"
             outcome = m.group("verb")
+            # Roll-call-style clauses ("A: Aye; B: Aye. Ayes: 4. [Absent: C - 1.]")
+            # list only who voted; the absent/recused member is in the bracket or prose.
+            unplaced = [s for s in present if s not in positions]
+            if positions and unplaced:
+                for s, label in find_missing(text[:m.end() + len(window)], unplaced).items():
+                    positions.setdefault(s, label)
+                # "Ayes: A, B and C - 3. Councilmembers D and Mayor E - 2." -- the clerk dropped
+                # the "Noes:" label; the unlabeled second list is the noes if its count matches.
+                still = [s for s in unplaced if s not in positions]
+                if still and any(v == "aye" for v in positions.values()):
+                    for nm in re.finditer(r"((?:Councilmembers?|Vice Mayor|Mayor)[^.;\[\]]*?)\s*[-–]\s*(\d+)\s*\.", window):
+                        named = [s for s in members_in(nm.group(1)) if s in still]
+                        if named and len(named) == int(nm.group(2)):
+                            for s in named:
+                                positions[s] = "no"
         if not positions:
             continue
         for s in absent:
@@ -573,6 +701,15 @@ def parse_motion(segment, present, absent, ctx=""):
     by the clerk's own "Council must make a separate motion..." aside). Flag
     it instead of silently trusting evs[-1], so a maintainer can eyeball it."""
     evs = vote_events(segment, present, absent, ctx=ctx)
+    # A long item whose only vote clause sits in its opening lines is a procedural
+    # motion ("limit public speaking time to 2 minutes") taken before the discussion,
+    # not the item's own vote -- the item's vote isn't in this segment.
+    if evs and len(segment) > 5000:
+        starts = [mm.start() for rx in (UNANIMOUS_RE, UNANIMOUS_ROLL_RE, FOLLOWING_RE, TALLY_RE)
+                  for mm in rx.finditer(segment)]
+        if starts and max(starts) < 0.1 * len(segment):
+            print(f"  ? procedural-only vote skipped [{ctx}]", file=sys.stderr)
+            return None
     if len(evs) >= 2 and len(segment) > 5000:
         dicts = [e[1] for e in evs]
         if any(dicts[i] != dicts[j] for i in range(len(dicts)) for j in range(i + 1, len(dicts))):
@@ -644,6 +781,15 @@ TENURE = {
 # squared with the names, and surrounding evidence says which name is the typo.
 # Keyed by (date, start of title); applied after parsing, logged when used.
 CLERK_VOTE_FIXES = {
+    # The roll call ran on into a second sentence ("The call for the question
+    # continued: Vice Mayor Vella: Aye; and Mayor Ezzy Ashcraft: Aye. Ayes: 5."), so
+    # the parser kept the first sentence's Vella "No" and dropped the Mayor.
+    ("2021-05-18", "Consider Directing Staff to Place the Audit Report"):
+        {"MV": "aye", "MEA": "aye"},
+    # "Ayes: Councilmembers Daysog, Herrera Spencer, and Jensen - 3. Councilmembers
+    # Vella and Mayor Ezzy Ashcraft - 2." -- the clerk left out the "Noes:" label.
+    ("2023-12-05", "Adoption of Resolution Amending the Fiscal Year 2023-24 General Fund Budget"):
+        {"MV": "no", "MEA": "no"},
     # CDM Smith amendment: roll call says Knox White "No" but he seconded the
     # motion and the clerk states "Ayes: 4. Noes: 1."
     ("2022-12-06", "Recommendation to Authorize the City Manager, or Designee, to Execute a Third Amendment"):
@@ -671,9 +817,9 @@ def apply_clerk_fixes(date, title, positions, result):
     for (d, prefix), fix in CLERK_VOTE_FIXES.items():
         if d == date and title.startswith(prefix):
             for short, val in fix.items():
-                if short in positions and positions[short] != val:
+                if positions.get(short) != val:
                     print(f"  ! clerk fix [{date} {title[:40]!r}]: {short} "
-                          f"{positions[short]} -> {val}", file=sys.stderr)
+                          f"{positions.get(short)} -> {val}", file=sys.stderr)
                     positions[short] = val
             ayes = sum(1 for v in positions.values() if v == "aye")
             noes = sum(1 for v in positions.values() if v == "no")
@@ -700,6 +846,39 @@ def fix_roll_call(present, date, ctx=""):
             print(f"  ! roll-call name outside tenure dropped [{ctx}]: {s}", file=sys.stderr)
             out.remove(s)
     return out
+
+
+def fix_present_absent(present, absent, late, date, ctx=""):
+    """A roll call that names one member as both present and absent (and isn't
+    explained by a late arrival) has a typo; if exactly one seated member is
+    unaccounted for, they are the one the clerk meant to list as present."""
+    both = [s for s in present if s in absent and s not in late]
+    unaccounted = [m for m in TENURE if in_office(m, date) and m not in present and m not in absent]
+    if len(both) == 1 and len(unaccounted) == 1:
+        print(f"  ! roll-call typo [{ctx}]: {both[0]} listed present and absent; {unaccounted[0]} -> present", file=sys.stderr)
+        present = list(present)
+        present[present.index(both[0])] = unaccounted[0]
+    elif len(both) == 1 and not unaccounted:
+        print(f"  ! roll-call typo [{ctx}]: {both[0]} listed present and absent; treated as absent", file=sys.stderr)
+        present = [s for s in present if s != both[0]]
+    return present
+
+
+def complete_positions(positions, present, late, body, ctx=""):
+    """Seated members the vote clause leaves out: a noted recusal/absence, or a
+    member who arrived after the meeting began, didn't vote on this item."""
+    positions = dict(positions)
+    for s in present:
+        if s in positions:
+            continue
+        cue = find_missing(body, [s]).get(s)
+        if cue:
+            positions[s] = cue
+        elif s in late:
+            positions[s] = "absent"
+        else:
+            print(f"  ? no position for seated member [{ctx}]: {s}", file=sys.stderr)
+    return positions
 
 
 def reconcile_stray(positions, present, absent, date, ctx=""):
@@ -735,6 +914,8 @@ def parse_minutes_text(plain, since, matter_file=None):
         if not date or date < since:
             continue
         present, absent = parse_roll_call(section)
+        late = roll_call_arrivals(section)
+        present = fix_present_absent(present, absent, late, date, ctx=date)
         present = fix_roll_call(present, date, ctx=date)
         if len(present) < 3:
             continue  # no quorum parsed; nothing reliable to attribute
@@ -748,10 +929,20 @@ def parse_minutes_text(plain, since, matter_file=None):
         anns = list(re.finditer(r"Following the Closed Session.*?(?=\r?\n\s*\r?\n|\Z)",
                                 section, re.S))
         for am in anns:
+            parent = ""
             for chunk in re.split(r"\bregarding\b", am.group(0))[1:]:
                 topic = re.split(r"[,;]", chunk, maxsplit=1)[0]
                 topic = re.sub(r"^\s*the\s+", "", topic).strip()[:80]
-                for res, pos in vote_events(chunk, present, absent, ctx=f"{date} closed-session/{topic[:30]}"):
+                evs = vote_events(chunk, present, absent, ctx=f"{date} closed-session/{topic[:30]}")
+                # "regarding Public Employee Performance Evaluation, ... Vote 1 regarding the
+                # City Clerk was approved by unanimous voice vote - 5": name the vote for
+                # the topic it falls under, not the clause that reports it.
+                wm = re.match(r"(?P<who>.+?)\s+was\s+(?:approved|adopted|carried|passed|failed)\b", topic)
+                if wm and parent:
+                    topic = f"{parent} - {wm.group('who')}"
+                elif not evs:
+                    parent = topic
+                for res, pos in evs:
                     ann_votes.append((topic, res, pos))
         for am in reversed(anns):
             section = section[:am.start()] + " " * (am.end() - am.start()) + section[am.end():]
@@ -789,8 +980,12 @@ def parse_minutes_text(plain, since, matter_file=None):
             # clauses (bracketed or a bare "Note:" paragraph) would otherwise win as the "last" vote event and be
             # stamped on every consent item. Per-item notes are applied
             # separately via apply_notes(), so blank them out here.
+            # The motion's own outcome can sit well past a long "Under discussion" run, but
+            # always before the first asterisked consent item, so the window runs to there.
+            nxt = re.search(r"\(\*\d{2}-", section[cm.end():cm.end() + 20000])
+            wend = cm.end() + nxt.start() if nxt else cm.start() + 3000
             cwin = re.sub(r"\[?\s*Note:.*?(?:\]|\n\s*\n|$)", lambda mm: " " * len(mm.group(0)),
-                          section[cm.start():cm.start() + 3000], flags=re.S)
+                          section[cm.start():max(wend, cm.start() + 3000)], flags=re.S)
             # First event, not last: it answers the consent motion itself, while
             # later ones are per-item exceptions ("Since Councilmember Daysog
             # recorded a no vote, the matter carried by the following vote:").
@@ -803,7 +998,17 @@ def parse_minutes_text(plain, since, matter_file=None):
                 return prior[-1]
             return consents[0][1] if consents else None  # motion recorded after its items
 
+        in_starred_run = False
         for si, (starred, title, para, body, other_body, tag) in enumerate(segments):
+            # "(*21- ) Recommendation ... Accepted; and" / "(21- A) Resolution No. 15803 ...
+            # Adopted." -- the clerk often drops the asterisk on a consent item's lettered
+            # companion; it rides the same consent motion as the starred parent.
+            if starred:
+                in_starred_run = True
+            elif in_starred_run and SIBLING_TAG_RE.match(tag):
+                starred = True
+            else:
+                in_starred_run = False
             if other_body or not title or TITLE_PREFIX_SKIP.match(title):
                 continue  # narrative ("Mayor X suggested..."), not an agenda item
             if SPEAKER_VERB_RE.search(para[:250]):
@@ -811,6 +1016,31 @@ def parse_minutes_text(plain, since, matter_file=None):
             # Starred items may still carry their own vote event (a clerk note
             # recording a member's exception to the blanket consent vote).
             parsed = parse_motion(body, present, absent, ctx=f"{date} {title[:50]!r}")
+            if not parsed and not starred:
+                # "(13-409) Resolution ... Adopted;" "(13-409 A) Resolution ... Adopted; and"
+                # "(13-409 B) Resolution ... Adopted." then ONE motion for the group, written
+                # after the last companion. Every companion shares that vote.
+                group = ""
+                for _, _, _, sbody, _, stag in segments[si + 1:]:
+                    if not SIBLING_TAG_RE.match(stag):
+                        break
+                    group += sbody
+                if group:
+                    gtext = body + group
+                    evs = vote_events(gtext, present, absent, ctx=f"{date} {title[:50]!r}")
+                    parsed = evs[0] if evs else None
+                    # A first clause in the opening lines of a long block is a procedural
+                    # motion ("limit public speaking time"), not the group's vote.
+                    if parsed and len(gtext) > 5000:
+                        first = min(mm.start() for rx in (UNANIMOUS_RE, UNANIMOUS_ROLL_RE, FOLLOWING_RE, TALLY_RE)
+                                    for mm in rx.finditer(gtext))
+                        if first < 0.1 * len(gtext):
+                            parsed = None
+                    # A companion the clerk marked "Not adopted" / "Withdrawn" (or "Adopted" when
+                    # the shared motion failed) didn't ride that motion.
+                    if parsed and ((parsed[0] == "passed" and NEG_STATUS_RE.search(para))
+                                   or (parsed[0] == "failed" and POS_STATUS_RE.search(para))):
+                        parsed = None
             if starred and not parsed:
                 # A starred parent ("(*17-  CC) Resolution No. 15272, budget")
                 # followed by lettered siblings ("(17-   A CC)", "B CC", ...)
@@ -829,6 +1059,7 @@ def parse_minutes_text(plain, since, matter_file=None):
             if starred:
                 positions = apply_notes(body, dict(positions))
             positions = reconcile_stray(positions, present, absent, date, ctx=f"{date} {title[:40]!r}")
+            positions = complete_positions(positions, present, late, body, ctx=f"{date} {title[:40]!r}")
             positions, result = apply_clerk_fixes(date, title, positions, result)
             rec = {"date": date, "title": title, "result": result,
                    "votes": positions}
