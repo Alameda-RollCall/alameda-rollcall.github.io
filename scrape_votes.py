@@ -48,6 +48,8 @@ COUNCIL_BODY_ID = 138  # "City Council" per /bodies
 # minutes, not assumed pre-2013 history. Names must match the clerk's
 # spelling; matching is substring-based, so e.g. "Spencer" also matches
 # later "Herrera Spencer" mentions after her name change.
+# "Ezzy" is a nickname/middle name, so show members as just "Ashcraft".
+DISPLAY_LAST = {"Ezzy Ashcraft": "Ashcraft"}
 MEMBERS = {
     "Ezzy Ashcraft": ("MEA", "Marilyn Ezzy Ashcraft", "Councilmember 2013-2018; Mayor 2019-present", "2013-present"),
     "Pryor":         ("MP",  "Michele Pryor", "Vice Mayor", "2024-2028"),
@@ -102,7 +104,9 @@ def build_members(votes):
     for frag, (s, n, r, t) in MEMBERS.items():
         meta = MEMBER_META.get(s, {})
         out.append({
-            "short": s, "name": n, "role": r, "term": t, "last": frag,
+            "short": s, "name": n, "role": r, "term": t,
+            # Display label; frag is the clerk's spelling used for matching.
+            "last": DISPLAY_LAST.get(frag, frag),
             "start": first.get(s),
             "end": None if meta.get("serving") else last.get(s),
             "spans": spans.get(s, []),
@@ -182,7 +186,7 @@ OTHER_BODY_RE = re.compile(r"\b(?:SACIC|APFA|CAFA|APIC|ACIC|PUB)\b")
 STATED_TALLY_RE = re.compile(r"Ayes:\s*(\d+)[.;]?\s*Noes:\s*(\d+)", re.I)
 
 UNANIMOUS_RE = re.compile(
-    r"\b(?P<outcome>carried|failed)\s+by\s+unanimous[^.]*?[-–—]\s*(?P<n>\d+)", re.I)
+    r"\b(?P<outcome>carried|failed)\s+by\s+(?:the\s+by\s+)?unanimous[^.]*?[-–—]\s*(?P<n>\d+)", re.I)  # clerk typo: "by the by unanimous"
 
 # "... carried by the following roll call vote: Ayes: ... - 4; Noes: ... - 1."
 # Also closed-session announcements ("approved the ... by the following voice
@@ -521,6 +525,14 @@ def vote_events(text, present, absent, ctx=""):
             # parts live in the rest of the paragraph after the "vote:" anchor
             window = re.split(r"\r?\n\s*\r?\n", text[m.end():m.end() + 500])[0]
             positions = parse_parts(window, present)
+            # The trailing "[Absent: X]" bracket also lists members who
+            # recused earlier in the item ("Councilmember X recused himself
+            # ... and left the dais"); the prose is the more specific cue.
+            gone = [s for s, v in positions.items() if v == "absent"]
+            if gone:
+                for s, label in find_missing(text[:m.end()], gone).items():
+                    if label == "recused":
+                        positions[s] = "recused"
             outcome = m.group("verb")
         if not positions:
             continue
