@@ -11,7 +11,11 @@ const ok=(name,cond,extra='')=>out.push((cond?'PASS ':'FAIL ')+name+(extra?'  â€
   ok('first vote card has summary headline + official title + link', !!d.querySelector('.vtitle')&&!!d.querySelector('.vofficial')&&!!d.querySelector('.vlink'));
   const firstVoteTop=d.querySelector('#voteList article').getBoundingClientRect().top;
   out.push('INFO first vote top at 420px-wide viewport: '+Math.round(firstVoteTop)+'px');
-  ok('first vote starts on the first phone screen (under 650px)', firstVoteTop<650, Math.round(firstVoteTop)+'px');
+  ok('filters are open by default', d.querySelector('#filterToggle').getAttribute('aria-expanded')==='true'&&d.querySelector('#fOutcome').offsetParent!==null);
+  d.querySelector('#filterToggle').click(); await sleep(100);
+  const collapsedTop=d.querySelector('#voteList article').getBoundingClientRect().top;
+  ok('Filters button collapses them and the first vote starts on the first phone screen (under 650px)', d.querySelector('#fOutcome').offsetParent===null&&collapsedTop<650, Math.round(collapsedTop)+'px');
+  d.querySelector('#filterToggle').click(); await sleep(100);
   // category chip -> active chip -> remove
   const chip=[...d.querySelectorAll('#catChips .chip')].find(x=>x.textContent==='Housing'); chip.click(); await sleep(150);
   ok('category chip shows active filter', !d.querySelector('#activeFilters').hidden && d.querySelector('#activeFilters').textContent.includes('Housing'));
