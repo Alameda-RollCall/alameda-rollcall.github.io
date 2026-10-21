@@ -71,6 +71,7 @@ h1 .isle{color:var(--teal)}
 main{max-width:1080px;margin:0 auto;padding:20px}
 
 /* Stats band */
+#activeFilters,#countLine{scroll-margin-top:12px}
 .statline{font-size:14px;color:var(--ink-soft);margin-bottom:18px}
 .statline strong{color:var(--ink);font-weight:600}
 .stat .n{font-family:var(--slab);font-weight:700;font-size:26px}
@@ -593,6 +594,18 @@ function compareSummary(shorts){
     ${alsoRows ? `<div class="cs-sub"><strong>Also-tagged topics.</strong> Votes can carry several secondary tags, so these rows overlap each other and the categories above.</div><table>${alsoRows}</table>` : ""}`};
 }
 
+/* After a filter link is clicked, bring the result into view: the "Showing" chips and the
+   vote list under them (not the page top, which on a phone is a screen of filters). */
+function scrollToResults(){
+  requestAnimationFrame(() => {
+    const box = $('#activeFilters');
+    const target = box && !box.hidden ? box : $('#countLine');
+    if(!target) return;
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({block:'start', behavior: reduce ? 'auto' : 'smooth'});
+  });
+}
+
 function goToCompare(shorts, opts={}){
   resetState(); state.compare = new Set(shorts);
   switchTab('votes'); syncControls(); renderVotes();
@@ -957,7 +970,7 @@ function renderStats(){
     + `<button type="button" class="stat-link" data-outcome="divided" title="Show the divided votes"><strong>${esc(divided)}</strong> divided</button> · `
     + `<strong>${esc(DATA.members.length)}</strong> members covered (all-time)`;
   $('#statsBand').querySelectorAll('.stat-link').forEach(b => b.onclick = () => {
-    resetState(); state.outcome = b.dataset.outcome; switchTab('votes'); syncControls(); renderVotes(); window.scrollTo({top:0});
+    resetState(); state.outcome = b.dataset.outcome; switchTab('votes'); syncControls(); renderVotes(); scrollToResults();
   });
 }
 
@@ -1030,7 +1043,8 @@ function renderVotes(){
         const c = t.dataset.cat;
         if(state.cat.size === 1 && state.cat.has(c)) state.cat.clear(); else state.cat = new Set([c]);
         syncControls(); renderVotes();
-        cs.querySelector(`.cs-topic[data-cat="${CSS.escape(c)}"]`)?.focus();
+        cs.querySelector(`.cs-topic[data-cat="${CSS.escape(c)}"]`)?.focus({preventScroll:true});
+        scrollToResults();
         return;
       }
       const mb = e.target.closest('.cs-member');
@@ -1039,7 +1053,8 @@ function renderVotes(){
       if(sp){
         state.splitKind = state.splitKind === sp.dataset.split ? "" : sp.dataset.split;
         syncControls(); renderVotes();
-        cs.querySelector(`.cs-split[data-split="${sp.dataset.split}"]`)?.focus();
+        cs.querySelector(`.cs-split[data-split="${sp.dataset.split}"]`)?.focus({preventScroll:true});
+        scrollToResults();
         return;
       }
       const b = e.target.closest('.cs-sort button'); if(!b) return;
@@ -1151,11 +1166,11 @@ function renderVotes(){
   });
   list.querySelectorAll('.vdate-btn').forEach(b=> b.onclick = () => {
     resetState(); state.dateFrom = state.dateTo = b.dataset.date;
-    syncControls(); renderVotes(); window.scrollTo({top:0});
+    syncControls(); renderVotes(); scrollToResults();
   });
   list.querySelectorAll('.vres-btn').forEach(b=> b.onclick = () => {
     state.outcome = state.outcome === b.dataset.outcome ? "" : b.dataset.outcome;
-    syncControls(); renderVotes(); window.scrollTo({top:0});
+    syncControls(); renderVotes(); scrollToResults();
   });
   list.querySelectorAll('.rc[data-short]').forEach(b=> b.onclick = () => goToMember(b.dataset.short));
   list.querySelectorAll('.vcat[data-cat], .vcat-also[data-cat]').forEach(b=> b.onclick = () => goToCategory(b.dataset.cat));
@@ -1296,7 +1311,7 @@ function renderCats(){
     resetState(); state.cat = new Set([b.dataset.cat]);
     if(b.classList.contains('cat-div')) state.outcome = "divided";
     switchTab('votes'); syncControls(); renderVotes();
-    window.scrollTo({top:0});
+    scrollToResults();
   });
 }
 </script>
