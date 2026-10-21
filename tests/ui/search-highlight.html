@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><pre id="out">running</pre><div id="h"></div>
+<script>
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const out=[];const f=document.createElement('iframe');f.style.cssText='width:600px;height:700px';f.src='../../index.html#q=lease';document.getElementById('h').appendChild(f);
+f.onload=async()=>{await sleep(1500);const d=f.contentDocument,w=f.contentWindow;
+ const marks=[...d.querySelectorAll('#voteList mark.hl')];
+ out.push('marks on page: '+marks.length+' | all text = "lease"(any case): '+marks.every(m=>m.textContent.toLowerCase()==='lease'));
+ out.push('q input shows: '+d.querySelector('#q').value);
+ const tog=[...d.querySelectorAll('.sum-more')].find(b=>b.closest('.sum-text').dataset.full.toLowerCase().includes('lease'));
+ if(tog){const sp=tog.closest('.sum-text');const before=sp.querySelectorAll('mark').length;tog.click();out.push('expanded summary keeps highlights: '+sp.querySelectorAll('mark').length+' (before '+before+')');tog.click();}
+ w.eval("state.q='a.b(c'; renderVotes();"); out.push('regex-special query handled, no error; cards: '+d.querySelectorAll('#voteList article').length);
+ w.eval("state.q='<b>'; renderVotes();"); out.push('html-ish query, injected tags: '+d.querySelectorAll('#voteList b').length);
+ document.getElementById('out').textContent=out.join('\n');};})();
+</script>

@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><pre id="out">running</pre><div id="h"></div>
+<script>
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{const f=document.createElement('iframe');f.style.cssText='width:380px;height:800px';f.src='../../index.html';document.getElementById('h').appendChild(f);
+f.onload=async()=>{await sleep(1500);const d=f.contentDocument,w=f.contentWindow;
+ d.querySelector('#moreFilters').open=true;
+ const sel={'category/tag/compare chip':'.chip','card category chip':'.vcat','permalink':'.vlink','filter ×':'.af-x','member vote chip':'.rc','tab':'.tab','select':'select','search box':'#q','summary "…"':'.sum-more','show full title':'.vo-more','Post toggle':'.ap-toggle','report link':'.vreport','csv/copy':'.count-actions button','more filters':'details.more>summary'};
+ const rows=[];
+ for(const [name,s] of Object.entries(sel)){const els=[...d.querySelectorAll(s)].filter(e=>e.offsetParent!==null);if(!els.length){rows.push([name,0]);continue;}
+  const hs=els.map(e=>Math.round(e.getBoundingClientRect().height)),ws=els.map(e=>Math.round(e.getBoundingClientRect().width));rows.push([name,els.length,Math.min(...hs),Math.min(...ws)]);}
+ document.getElementById('out').textContent=JSON.stringify(rows);};})();
+</script>

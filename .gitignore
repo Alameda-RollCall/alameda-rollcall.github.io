@@ -1,0 +1,22 @@
+# environments and caches
+venv/
+gpn-venv/
+__pycache__/
+.work/
+.DS_Store
+
+# local-only data and caches (rebuild with refresh_cache.py / post_coverage.py)
+minutes_cache/
+post_cache.json
+post_articles.json
+coverage_cache/
+fetch_coverage.py
+votes.scraped*.json
+
+# session and handoff files
+.claude/
+HANDOFF.md
+diagnose_api.py
+granicus_cache.json
+yt_cache/
+legistar_items_cache.json

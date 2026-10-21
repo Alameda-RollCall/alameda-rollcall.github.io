@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alameda Roll Call — City Council Voting Record</title>
+<meta name="description" content="A searchable record of how Alameda City Council members actually voted, parsed automatically from the official minutes (may contain errors; verify against the official record). Independent; not affiliated with the City.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Alameda Roll Call — City Council Voting Record">
+<meta property="og:description" content="Every recorded Alameda City Council roll call since 2013: search by member, topic and outcome, compare council members side by side, and follow each vote to the official record. Automated; may contain errors.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#14606F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314606F'/%3E%3Cpath d='M8 17l5 5 11-12' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/PublicSans-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ZillaSlab-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Fonts are hosted in this repository (fonts/, SIL Open Font License) so visitors make no request to Google. */
+@font-face{font-family:"Public Sans";font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/PublicSans-latin-variable.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"Zilla Slab";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/ZillaSlab-500-latin.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"Zilla Slab";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/ZillaSlab-600-latin.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"Zilla Slab";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/ZillaSlab-700-latin.woff2) format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+:root{
+  --ink:#16283A; --ink-soft:#41546A; --paper:#F6F7F4; --card:#FFFFFF;
+  --hair:#D9DDD5; --teal:#14606F; --teal-soft:#E3EEF0;
+  --aye:#29714F; --aye-bg:#E4F0E9; --no:#B0402C; --no-bg:#F6E6E1;
+  --abst:#B3841F; --abst-bg:#F5EDDA; --abs:#8A93A0; --abs-bg:#ECEEF1;
+  --abst-text:#7A5A0C; --abs-text:#556070;   /* text-safe (4.5:1+) versions of the amber and gray */
+  --recused:#6B4E9C; --recused-bg:#EDE7F5;
+  --radius:10px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --slab:"Zilla Slab",Rockwell,"Roboto Slab",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+/* Masthead */
+.masthead{border-bottom:3px solid var(--ink);background:var(--card)}
+.masthead-inner{max-width:1080px;margin:0 auto;padding:22px 20px 16px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end}
+h1{font-family:var(--slab);font-weight:700;font-size:30px;letter-spacing:.2px;line-height:1.1}
+h1 .isle{color:var(--teal)}
+.tagline{color:var(--ink-soft);font-size:14px;margin-top:4px}
+.notice{background:var(--abst-bg);border-bottom:1px solid var(--abst);color:var(--ink)}
+.notice-inner{max-width:1080px;margin:0 auto;padding:9px 20px;font-size:13px;line-height:1.45}
+.notice strong{font-weight:700}
+.notice .linklike{font-size:inherit}
+.data-pill{font-size:12px;border:1px solid var(--hair);border-radius:999px;padding:6px 12px;background:var(--paper);color:var(--ink-soft);cursor:pointer}
+.data-pill:hover{filter:brightness(0.96)}
+.data-pill.sample{border-color:var(--abst);background:var(--abst-bg);color:#6d5312}
+.data-pill.live{border-color:var(--aye);background:var(--aye-bg);color:var(--aye)}
+
+/* Tabs */
+.tabs{max-width:1080px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto}
+.tab{border:none;background:none;padding:12px 14px 10px;font-weight:600;color:var(--ink-soft);border-bottom:3px solid transparent;margin-bottom:-3px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--teal)}
+.tab:hover{color:var(--ink)}
+
+main{max-width:1080px;margin:0 auto;padding:20px}
+
+/* Stats band */
+.statline{font-size:14px;color:var(--ink-soft);margin-bottom:18px}
+.statline strong{color:var(--ink);font-weight:600}
+.stat .n{font-family:var(--slab);font-weight:700;font-size:26px}
+.stat .l{font-size:13px;color:var(--ink-soft)}
+
+/* Filters */
+.filters{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.frow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.frow+.frow{margin-top:10px}
+input[type=search],input[type=date],select{font:inherit;padding:8px 10px;border:1px solid var(--hair);border-radius:8px;background:var(--paper);color:var(--ink)}
+.compare-note{font-size:13px;color:var(--no);margin:-4px 2px 10px}
+.compare-summary{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:12px 16px;margin:0 0 12px;font-size:14px}
+.compare-summary .cs-head{font-weight:600;margin-bottom:4px}
+.compare-summary .cs-sub{color:var(--ink-soft);font-size:13px}
+.compare-summary table{border-collapse:collapse;margin-top:8px;font-size:13px}
+.compare-summary td,.compare-summary th{padding:2px 14px 2px 0;text-align:left;font-weight:400}
+.compare-summary .warn{color:var(--no)}
+input[type=search]{flex:1;min-width:180px}
+.chip{border:1px solid var(--hair);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink-soft)}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.flabel{font-size:13px;color:var(--ink-soft)}
+.clear-btn{border:none;background:none;color:var(--teal);font-size:13px;text-decoration:underline}
+.count-line{font-size:13px;color:var(--ink-soft);margin:0 0 10px 2px}
+.count-row{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;justify-content:space-between}
+.count-actions{display:flex;gap:14px;margin-bottom:10px}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--ink);color:#fff;padding:8px 12px;z-index:20}
+.skip-link:focus{left:8px;top:8px}
+details.more{margin-top:10px}
+details.more>summary{cursor:pointer;color:var(--teal);font-size:13px;font-weight:600;list-style:none}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::before{content:"▸ ";display:inline-block;width:1em}
+details.more[open]>summary::before{content:"▾ "}
+details.more[open]>summary{margin-bottom:10px}
+.more-hint{font-weight:400;color:var(--ink-soft);font-size:12px;margin-left:6px}
+.active-filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--hair)}
+.af-label{font-size:13px;color:var(--ink-soft)}
+.af-chip{display:inline-flex;gap:6px;align-items:center;background:var(--teal-soft);color:var(--ink);border:1px solid var(--teal);border-radius:999px;padding:3px 6px 3px 12px;font-size:13px}
+.af-chip b{font-weight:600}
+.af-x{border:none;background:none;color:var(--teal);font-size:16px;line-height:1;padding:0 6px;border-radius:50%}
+.af-x:hover{background:var(--teal);color:#fff}
+.chip-scroll{flex-wrap:nowrap}
+.chip-scroll .chip,.chip-scroll .flabel{flex:0 0 auto;white-space:nowrap}
+.chip-scroll{overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+@media(min-width:760px){.chip-scroll{flex-wrap:wrap;overflow:visible;padding-bottom:0}}
+@media(max-width:600px){
+  .filters{padding:12px}
+  .filters select{flex:1 1 44%;min-width:0}
+  .filters input[type=search]{flex:1 1 100%}
+  .chip{padding:8px 14px;font-size:14px}
+  .vote{padding:12px 6px 12px 20px}
+}
+.vtitle{margin-bottom:4px}
+.vofficial{font-size:12.5px;color:var(--ink-soft);line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vofficial.open{display:block;overflow:visible}
+.draft-badge{font-size:12px;color:var(--ink-soft);border:1px dashed var(--line,#b9b3a6);border-radius:10px;padding:0 7px;white-space:nowrap}
+.vo-label{font-weight:600;margin-right:4px}
+.vo-more{border:none;background:none;color:var(--teal);font-size:12px;padding:0 0 6px;text-decoration:underline;display:block}
+.vfoot{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;font-size:13px;margin-bottom:10px}
+.vsources{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
+.vactions{display:flex;gap:14px;margin-left:auto}
+.vtitle,.vofficial{max-width:72ch}
+.vnote{background:var(--abst-bg);border-left:3px solid var(--abst);color:var(--ink);font-size:13px;line-height:1.45;padding:6px 10px;margin:0 0 10px;border-radius:0 6px 6px 0}
+.vnote b{font-weight:700}
+.vreport{color:var(--ink-soft);font-size:13px}
+.vlink{font-size:13px;color:var(--ink-soft)}
+.vlink:hover{color:var(--teal)}
+.vote.target{background:var(--teal-soft)}
+.mgroup{grid-column:1/-1;font-family:var(--slab);font-size:20px;margin:10px 0 0}
+.mgroup small{font-family:var(--sans);font-size:13px;color:var(--ink-soft);font-weight:400;margin-left:8px}
+.bar-row.low .bar{opacity:.5}   /* fade the bar only: keep the number readable */
+.mx-legend{display:inline-block;width:90px;height:10px;vertical-align:middle;border-radius:3px;margin:0 6px;background:linear-gradient(90deg,var(--teal-soft),var(--teal))}
+
+/* Vote cards (the ledger) */
+.vote{position:relative;border-bottom:1px solid var(--hair);padding:12px 10px 12px 22px}
+.spine{position:absolute;left:4px;top:12px;bottom:12px;width:6px;display:flex;flex-direction:column;gap:2px;border-radius:3px;overflow:hidden}
+.spine i{flex:1 1 0;min-height:4px;background:var(--abs)}
+.spine i.aye{background:var(--aye)}
+.spine i.no{background:var(--no)}
+.spine i.abstain{background:var(--abst)}
+.spine i.recused{background:var(--recused)}
+.spine i.absent{background:var(--abs-bg);box-shadow:inset 0 0 0 1px var(--abs)}
+.vote-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+.vdate{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+.vcat{font-size:12px;font-weight:600;color:var(--teal);background:var(--teal-soft);border-radius:4px;padding:2px 7px;border:none}
+.vcat:hover{background:var(--teal);color:#fff}
+.sum-more{background:none;border:none;padding:0 3px;font:inherit;color:var(--teal);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.sum-more:hover,.sum-more:focus-visible{color:var(--ink);text-decoration:underline}
+.ap-toggle{background:none;border:none;padding:0;font:inherit;color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.ap-toggle:hover,.ap-toggle:focus-visible{color:var(--ink)}
+.ap-panel{margin:6px 0 2px;padding:8px 12px;background:var(--teal-soft);border-radius:6px;font-size:13px}
+.ap-panel ul{margin:6px 0 4px 18px;padding:0}
+.ap-panel li{margin:2px 0}
+.ap-note,.ap-when{color:var(--ink-soft);font-size:12px}
+.ap-search{font-size:12px}
+mark.hl{background:#FFE9A8;color:inherit;border-radius:2px;padding:0 1px}
+/* Bigger tap targets on touch screens and narrow windows (WCAG 2.2 asks for at least 24px; aim near 44px). */
+@media (pointer:coarse), (max-width:600px){
+  .chip{min-height:44px;padding:10px 16px}
+  select,input[type=search],input[type=date]{min-height:44px}
+  .vcat,.vlink{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px}
+  .sum-more{display:inline-block;min-width:32px;min-height:32px;padding:4px 10px;text-align:center}
+  .ap-toggle,.vreport,.vo-more{display:inline-block;min-height:32px;padding:7px 0}
+  .count-actions button,details.more>summary{min-height:36px;padding:8px 2px}
+  .rc{min-height:34px;padding:6px 10px}
+  .af-x{min-width:32px;min-height:32px}
+  .af-chip{padding-top:4px;padding-bottom:4px}
+  .tab{min-height:44px}
+}
+.vcat-also{background:transparent;color:var(--ink-soft);border:1px dashed var(--hair);font-weight:500;font-size:12px}
+.vcat-also:hover{background:var(--teal-soft);color:var(--teal)}
+.vresult{margin-left:auto;font-family:var(--mono);font-size:12px;font-weight:600}
+.vresult.passed{color:var(--aye)}
+.vresult.failed{color:var(--no)}
+.vtitle{font-family:var(--slab);font-weight:600;font-size:17px;line-height:1.3;margin-bottom:4px}
+.vsummary{color:var(--ink-soft);font-size:14px;margin-bottom:10px}
+/* Signature: roll-call strip */
+.roll{display:flex;gap:6px;flex-wrap:wrap}
+.rc{font-size:13px;font-weight:500;border-radius:6px;padding:4px 8px;border:1px solid transparent;background:none;line-height:1.4}
+.rc:hover{filter:brightness(0.94)}
+.rc:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.rc.aye{background:var(--aye-bg);color:var(--aye)}
+.rc.no{background:var(--no-bg);color:var(--no)}
+.rc.abstain{background:var(--abst-bg);color:var(--abst-text)}
+.rc.absent{background:var(--abs-bg);color:var(--abs-text);border-style:dashed;border-color:var(--abs)}
+.rc.recused{background:var(--recused-bg);color:var(--recused);border-style:dashed;border-color:var(--recused)}
+.rc b{font-weight:700}
+.mname.linklike{cursor:pointer}
+.mname.linklike:hover{text-decoration:underline}
+
+/* Members */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mcard{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:16px}
+.mname{font-family:var(--slab);font-weight:700;font-size:19px}
+.mrole{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+.mstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.mstat .n{font-family:var(--mono);font-weight:700;font-size:18px}
+.mstat .l{font-size:11px;color:var(--ink-soft)}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px}
+.bar-row .bl{width:128px;padding:0;border:none;background:none;font:inherit;color:var(--ink-soft);flex-shrink:0;white-space:normal;line-height:1.2;text-align:left;cursor:pointer}
+.bar-row .bl:hover{color:var(--teal);text-decoration:underline}
+.bar{flex:1;height:10px;background:var(--paper);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--no)}
+.bar-row .bn{font-family:var(--mono);width:36px;text-align:right;color:var(--ink-soft)}
+.mnote{font-size:12px;color:var(--ink-soft);border-top:1px dashed var(--hair);padding-top:8px;margin-top:4px}
+
+/* Agreement matrix */
+.matrix-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:16px}
+table.matrix{border-collapse:collapse;font-family:var(--mono);font-size:12px;margin:0 auto}
+.matrix th,.matrix td{padding:7px 6px;text-align:center}
+.matrix th:first-child{text-align:left}
+.matrix td{min-width:46px}
+.cell-btn{width:100%;padding:0;border:none;background:none;font:inherit;color:inherit;cursor:pointer}
+.cell-btn:hover{text-decoration:underline}
+.matrix th{font-family:var(--sans);font-size:12px;position:sticky;top:0;background:var(--card)}
+.matrix th:first-child,.matrix td:first-child{position:sticky;left:0;background:var(--card)}
+.matrix td.self{color:var(--abs-text)}
+.matrix td.na{color:var(--abs-text)}
+.mx-note{font-size:12px;color:var(--ink-soft);margin-top:10px}
+
+/* Categories */
+.cat-card{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.cat-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:8px}
+.cat-head h3{font-family:var(--slab);font-size:18px}
+.cat-meta{font-size:13px;color:var(--ink-soft)}
+.cat-divided{font-size:13px;color:var(--ink-soft)}
+.cat-note{font-size:13px;color:var(--ink-soft);font-style:italic;margin-bottom:8px}
+.cat-divided li{margin:4px 0 4px 18px}
+.linklike{background:none;border:none;color:var(--teal);text-decoration:underline;padding:0;font-size:13px;text-align:left}
+
+/* About */
+.prose{background:var(--card);border:1px solid var(--hair);border-radius:var(--radius);padding:20px;max-width:760px}
+.prose h3{font-family:var(--slab);margin:14px 0 6px}
+.prose p{margin-bottom:10px;color:var(--ink-soft)}
+.prose p:first-child{margin-top:0}
+
+.empty{padding:30px;text-align:center;color:var(--ink-soft);background:var(--card);border:1px dashed var(--hair);border-radius:var(--radius)}
+footer{border-top:1px solid var(--hair);margin-top:30px;padding:16px 20px;text-align:center;font-size:12px;color:var(--ink-soft)}
+.ftoggle{display:none}
+@media(max-width:600px){
+  h1{font-size:24px}.vresult{margin-left:0}
+  .masthead-inner{padding:14px 16px 8px}
+  .data-pill{display:none}
+  .tabs{flex-wrap:wrap;padding:0 8px;gap:0}.tab{padding:10px 9px 8px;font-size:14px}.tab-long{display:none}
+  .notice-inner{padding:7px 16px}.notice-more{display:none}
+  main{padding:12px 12px 20px}
+  .statline{font-size:13px}
+  /* phones: the search box stays, the rest of the filters open from one button */
+  .frow:first-child input[type=search]{flex:1 1 140px;min-width:120px}
+  .ftoggle{display:inline-flex;flex:0 0 auto;white-space:nowrap;align-items:center;min-height:44px;padding:0 16px;border:1px solid var(--hair);border-radius:8px;background:var(--card);color:var(--ink);font-weight:600}
+  .ftoggle[aria-expanded="true"]{border-color:var(--teal);color:var(--teal)}
+  .filters.collapsed .frow > select,.filters.collapsed .frow > label,
+  .filters.collapsed #catChips,.filters.collapsed #compareChips,.filters.collapsed #moreFilters{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to the votes</a>
+<noscript><div class="notice"><div class="notice-inner"><strong>This site needs JavaScript to show the voting record.</strong> The data is in <a href="votes.json">votes.json</a>, and the official minutes are at <a href="https://alameda.legistar.com">alameda.legistar.com</a>.</div></div></noscript>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <h1>Alameda <span class="isle">Roll Call</span></h1>
+      <div class="tagline">Alameda’s City Council vote explorer</div>
+    </div>
+    <button type="button" class="data-pill sample" id="dataPill" title="See methodology and sourcing">Loading data…</button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" data-view="votes" aria-selected="true">Roll Call</button>
+    <button class="tab" role="tab" data-view="members" aria-selected="false">Members</button>
+    <button class="tab" role="tab" data-view="agreement" aria-selected="false">Agreement</button>
+    <button class="tab" role="tab" data-view="categories" aria-selected="false">Categories</button>
+    <button class="tab" role="tab" data-view="about" aria-selected="false">About<span class="tab-long"> the data</span></button>
+  </nav>
+</header>
+
+<div class="notice" role="note">
+  <div class="notice-inner"><strong>This site is automated and may contain errors.</strong><span class="notice-more"> Software reads the City Clerk's typed minutes to build this record; no one checks every vote by hand. Before relying on or quoting a vote, open its meeting-record link and confirm it.</span> <button type="button" class="linklike" id="noticeMore">How it works →</button></div>
+</div>
+
+<main id="main" tabindex="-1">
+  <div class="statline" id="statsBand"></div>
+
+  <!-- ROLL CALL -->
+  <section id="view-votes">
+    <div class="filters collapsed" id="filterBody">
+      <div class="frow">
+        <input type="search" id="q" placeholder="Search vote titles and summaries…" aria-label="Search votes">
+        <button type="button" class="ftoggle" id="filterToggle" aria-expanded="false" aria-controls="filterBody">Filters</button>
+        <select id="fOutcome" aria-label="Filter by outcome">
+          <option value="">Any outcome</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed</option>
+          <option value="divided">Divided (any No vote)</option>
+          <option value="unanimous">Unanimous</option>
+        </select>
+        <select id="fMember" aria-label="Filter by member"><option value="">Any member</option></select>
+        <select id="fStance" aria-label="Member's position">
+          <option value="">Any position</option>
+          <option value="aye">voted Aye</option>
+          <option value="no">voted No</option>
+          <option value="abstain">abstained</option>
+          <option value="absent">was absent</option>
+          <option value="dissent">was in the minority</option>
+        </select>
+        <select id="fSort" aria-label="Sort order">
+          <option value="new">Newest first</option>
+          <option value="old">Oldest first</option>
+          <option value="closest">Closest votes first</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="fHideUnanimous"> Hide unanimous votes
+        </label>
+      </div>
+      <div class="frow chip-scroll" id="catChips"><span class="flabel">Category:</span></div>
+      <div class="frow chip-scroll" id="compareChips"><span class="flabel" title="Pick two or more members to see where they disagreed">Compare members:</span></div>
+      <details class="more" id="moreFilters">
+        <summary>More filters <span class="more-hint">topic tags, dates, council makeup</span></summary>
+        <div class="frow" id="tagChips"><span class="flabel">Also tagged:</span></div>
+        <div class="frow">
+          <span class="flabel">Date range:</span>
+          <input type="date" id="fDateFrom" aria-label="From date">
+          <span style="color:var(--ink-soft)">to</span>
+          <input type="date" id="fDateTo" aria-label="To date">
+        </div>
+        <div class="frow" id="eraChips"><span class="flabel">Council makeup:</span></div>
+      </details>
+      <p class="compare-note" id="compareNote" hidden></p>
+      <div class="compare-summary" id="compareSummary" hidden></div>
+      <div class="active-filters" id="activeFilters" hidden></div>
+    </div>
+    <div class="count-row">
+      <p class="count-line" id="countLine" aria-live="polite"></p>
+      <span class="count-actions">
+        <button type="button" class="clear-btn" id="csvBtn" title="Download the votes matching the current filters as a spreadsheet (CSV)">Download CSV</button>
+        <button type="button" class="clear-btn" id="copyViewBtn" title="Copy a link to this exact view">Copy link to this view</button>
+      </span>
+    </div>
+    <div id="voteList"></div>
+  </section>
+
+  <!-- MEMBERS -->
+  <section id="view-members" hidden><div class="mgrid" id="memberGrid"></div></section>
+
+  <!-- AGREEMENT -->
+  <section id="view-agreement" hidden>
+    <div class="matrix-wrap">
+      <table class="matrix" id="matrixTable" aria-label="Pairwise agreement between members"></table>
+      <p class="mx-note">Each cell is the share of votes where both members were present and cast the same vote. Darker = more aligned (<span class="mx-legend" aria-hidden="true"></span>70% to 100%). Click a cell to see the votes where the pair split. Abstentions count as a position; absences are excluded from the pair's total.</p>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section id="view-categories" hidden><div id="catList"></div></section>
+
+  <!-- ABOUT -->
+  <section id="view-about" hidden>
+    <div class="prose">
+      <p id="aboutStatus"></p>
+      <h3>This site is automated and may contain errors</h3>
+      <p>Software extracted every vote from the City Clerk's narrative minutes, and pattern-matching rules assigned the categories and summaries; no person or AI reads each item. The minutes are typed by hand, formatted inconsistently over thirteen years, and sometimes name the wrong person, so a vote can be misattributed, mislabeled, missing, or merged with another. Where a meeting's own motions make the right member unambiguous, we correct the clerk's slip; otherwise the item stays as written. We fix errors as we find them, so details may change. Treat this site as a starting point: every vote links to the official meeting record and the meeting video, which is the final word.</p>
+      <h3>Source and scope</h3>
+      <p>The City publishes minutes through <a href="https://alameda.legistar.com" rel="noopener">Legistar</a>, but Alameda's instance leaves the electronic vote-tally fields empty, so each roll call is parsed from the minutes text. The record runs from August 2013, the start of Legistar's archive, to the latest published minutes, and includes everyone who held a council seat in that span, not just current members. Each member's term dates come from their own roll-call appearances.</p>
+      <p>Only items with a recorded roll call count. A consent-calendar motion appears as one vote unless a member pulled an item, and procedural motions with a roll call are filed under Governance. When the clerk's stated tally disagrees with the names listed, the names are generally shown as written.</p>
+      <h3>Categories</h3>
+      <p>Each vote has one main category, assigned by rules from the item's title, and up to four dashed "also" tags where it clearly spans topics. Filters match either. The "also tagged" row holds cross-cutting topics (such as Labor & Workforce or Climate & Energy) and the place tag Alameda Point, which marks any item about the former Naval Air Station whatever its topic. Categories are navigation aids, not legal classifications.</p>
+      <h3>Found a mistake?</h3>
+      <p>Every vote has a "Report an error" link that opens a pre-filled issue on the project's <a href="https://github.com/Alameda-RollCall/Alameda-RollCall/issues" rel="noopener">GitHub page</a>. Corrections are made in the scraper's rules, so one fix repairs every vote with the same pattern.</p>
+      <h3>Absent vs. recused</h3>
+      <p>"Absent" means the member wasn't recorded as present for that vote. "Recused" means the minutes say the member stepped out over a conflict of interest, which is declining to take part, not missing a meeting. Some absences are unrecorded recusals, so check the record before drawing conclusions. A member is counted only for votes held while seated: a vote before someone took office or after they left is never an absence.</p>
+      <h3>Privacy</h3>
+      <p>This site uses Cloudflare Web Analytics to count page views and see which parts of the site are used. Cloudflare says the service sets no cookies and does not track visitors across sites. The project collects no accounts or personal details.</p>
+      <h3>Draft minutes</h3>
+      <p>The City Clerk's minutes become official when the Council approves them, usually at its next meeting or the one after. Votes from meetings whose minutes are still waiting for approval carry a "draft minutes" label and may be corrected. The label comes off at the next update after the approval.</p>
+      <h3>Videos and transcripts</h3>
+      <p>Every vote links to the City's recording of its meeting. Where the item's start could be found, "watch item" opens the video there: for 2013 to early 2021 from the City's own agenda index, and for 2025 on from where the chair or clerk names the item in the video's captions. A consent item that was approved with the others links to where the consent calendar was taken up. These links are matched automatically and can land a minute or two off, so confirm the item on screen. Other votes link to the whole meeting. A few meetings have two recordings, and a few have none.</p>
+      <p>"Transcript" opens YouTube's automatic captions of the meeting, scrolled to the item. Captions exist for the City's YouTube videos from 2025 (and one from 2024); there are none for earlier meetings. They are machine-generated, so names, numbers and legal terms are often wrong and speakers are not identified. They are not the official record.</p>
+      <h3>Alameda Post links</h3>
+      <p>A vote links to an <a href="https://alamedapost.com" rel="noopener">Alameda Post</a> news story when one discussing the item ran within about a week of the meeting; these matches are automatic and sometimes wrong. Other votes from 2022 on offer an expandable list of the Post's "City Council" stories from around that meeting (they cover the meeting generally, not necessarily the item), or a keyword search when there are none. The Post's archive is nearly empty before 2022, so earlier votes have no Post link.</p>
+      <h3>Reading the numbers fairly</h3>
+      <p>A high dissent rate isn't good or bad by itself: it can reflect principled disagreement, a different era's priorities, or a council that rarely splits. For context, read the staff report or watch the meeting.</p>
+      <p>This is an independent, volunteer-run resource, not affiliated with the City of Alameda.</p>
+    </div>
+  </section>
+</main>
+
+<footer>Automated and may contain errors: verify against the official record · Built from the public record · Data refreshes from Legistar · <span id="footGen"></span></footer>
+
+<script>
+/* ================= DATA =================
+   The app tries to load ./votes.json (produced by scrape_votes.py).
+   If it's not present, it falls back to the ILLUSTRATIVE sample below.
+   Sample vote positions are placeholders to demonstrate the interface —
+   they are NOT the official record. */
+
+const SAMPLE_DATA = {
+  generated: null,
+  sample: true,
+  members: [
+    {short:"MEA", name:"Marilyn Ezzy Ashcraft", role:"Mayor", term:"2018–2026"},
+    {short:"MP",  name:"Michele Pryor",         role:"Vice Mayor", term:"2024–2028"},
+    {short:"TD",  name:"Tony Daysog",           role:"Councilmember", term:"2018–2026"},
+    {short:"GB",  name:"Greg Boller",           role:"Councilmember", term:"2024–2028"},
+    {short:"TJ",  name:"Tracy Jensen",          role:"Councilmember", term:"2022–2026"}
+  ],
+  votes: [
+    {id:"s01", date:"2026-06-16", category:"Budget & Finance", title:"Adopt the FY 2026-27 Mid-Cycle Budget Update", summary:"Approves mid-cycle adjustments to the two-year operating budget, including reserve allocations.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"aye",TJ:"aye"}},
+    {id:"s02", date:"2026-06-02", category:"Housing", title:"Density Bonus Application for a Mixed-Income Project on Park Street", summary:"Approves a state density bonus request adding affordable units above base zoning.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"aye",TJ:"aye"}},
+    {id:"s03", date:"2026-05-19", category:"Transportation", title:"Grand Street Safety Improvements — Final Design", summary:"Adopts the final striping plan with protected bike lanes and daylighted intersections.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"aye",TJ:"abstain"}},
+    {id:"s04", date:"2026-05-19", category:"Parks & Environment", title:"De-Pave Park Phase 1 Construction Contract", summary:"Awards the construction contract for the first phase of the Alameda Point ecological park.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s05", date:"2026-05-05", category:"Public Safety", title:"CARE Team Program Expansion and Staffing", summary:"Extends the civilian mental-health crisis response pilot and adds a second daytime unit.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s06", date:"2026-04-21", category:"Housing", title:"Ordinance Amending Rent Program Fee Schedule", summary:"Adjusts the annual program fee charged per rental unit to fund the Rent Program.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"no",TJ:"aye"}},
+    {id:"s07", date:"2026-04-21", category:"Economic Development", title:"Lease Amendment for Building 8, Alameda Point", summary:"Approves revised lease terms for a maker-space tenant at Alameda Point.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"absent"}},
+    {id:"s08", date:"2026-04-07", category:"Governance", title:"Charter Amendment Ballot Language for November 2026", summary:"Places a charter cleanup measure on the general election ballot.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"abstain",GB:"aye",TJ:"aye"}},
+    {id:"s09", date:"2026-03-17", category:"Transportation", title:"Oakland-Alameda Estuary Bridge — Project Support Resolution", summary:"Authorizes continued design funding and grant applications for the bike-pedestrian bridge.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s10", date:"2026-03-17", category:"Public Safety", title:"Automated License Plate Reader Policy Renewal", summary:"Renews the ALPR program with revised retention limits and audit requirements.", result:"passed", votes:{MEA:"aye",MP:"no",TD:"aye",GB:"aye",TJ:"no"}},
+    {id:"s11", date:"2026-03-03", category:"Housing", title:"Warming Shelter Operations Contract Extension", summary:"Extends the seasonal warming shelter operator agreement through spring 2027.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s12", date:"2026-02-17", category:"Budget & Finance", title:"Refunding of 2016 General Obligation Bonds", summary:"Authorizes refinancing outstanding bonds to reduce debt-service costs.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s13", date:"2026-02-03", category:"Transportation", title:"Residential RV Parking Time-Limit Ordinance", summary:"Establishes citywide time limits for oversized-vehicle parking on residential streets.", result:"failed", votes:{MEA:"no",MP:"no",TD:"aye",GB:"aye",TJ:"no"}},
+    {id:"s14", date:"2026-01-20", category:"Parks & Environment", title:"Urban Forest Plan — Street Tree Replacement Standards", summary:"Adopts species and replacement standards for city street trees.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s15", date:"2026-01-06", category:"Economic Development", title:"Facade Grant Program Expansion to Webster Street", summary:"Expands the storefront improvement grant program to a second business district.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s16", date:"2025-12-16", category:"Housing", title:"Affordable Housing Fund Allocation — Site A Predevelopment", summary:"Commits local housing funds to predevelopment of a 100% affordable project.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"aye",TJ:"aye"}},
+    {id:"s17", date:"2025-12-02", category:"Governance", title:"Council Meeting Public Comment Procedures Update", summary:"Revises time allocations and remote comment rules for council meetings.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"abstain",TJ:"aye"}},
+    {id:"s18", date:"2025-11-18", category:"Public Safety", title:"Fire Station 3 Apparatus Replacement Purchase", summary:"Approves purchase of a replacement fire engine through a cooperative agreement.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s19", date:"2025-11-04", category:"Budget & Finance", title:"Sales Tax Measure Spending Plan — Annual Report Acceptance", summary:"Accepts the annual expenditure report for local transaction-and-use tax revenue.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s20", date:"2025-10-21", category:"Transportation", title:"Clement Avenue Extension — Certification of Final EIR", summary:"Certifies the environmental review for the Clement Avenue cross-town connection.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"no"}},
+    {id:"s21", date:"2025-10-07", category:"Housing", title:"Tenant Relocation Assistance Ordinance Amendments", summary:"Updates relocation payment amounts and qualifying circumstances for displaced tenants.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"no",GB:"no",TJ:"aye"}},
+    {id:"s22", date:"2025-09-16", category:"Parks & Environment", title:"Zero Waste Implementation Plan Update Adoption", summary:"Adopts updated diversion targets and program milestones through 2030.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s23", date:"2025-09-02", category:"Economic Development", title:"Alameda Point Building 116 Demolition Award", summary:"Awards the demolition contract clearing a development parcel at Alameda Point.", result:"passed", votes:{MEA:"aye",MP:"absent",TD:"aye",GB:"aye",TJ:"aye"}},
+    {id:"s24", date:"2025-08-19", category:"Governance", title:"Board and Commission Appointment Slate — Fall 2025", summary:"Confirms mayoral appointments to city boards and commissions.", result:"passed", votes:{MEA:"aye",MP:"aye",TD:"aye",GB:"aye",TJ:"aye"}}
+  ]
+};
+
+/* ================= APP ================= */
+let DATA = null;
+let MBY = {}; // short -> member record, for quick lookup
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const lastName = m => m && (m.last || (m.name||"").trim().split(/\s+/).slice(-1)[0]) || "?";
+// Some members' `role` already embeds date ranges ("Councilmember 2013-2018;
+// Mayor 2019-present") because their title changed mid-tenure; don't also
+// tack on the separate `term` field in that case, or the years repeat.
+// Tenure comes from the member's first/last roll-call appearance (start/end),
+// not an open-ended term string; candidacy is appended for the Nov 2026 race.
+const yr = d => d ? d.slice(0,4) : "";
+const spanText = m => {
+  if(m && m.spans && m.spans.length){
+    const last = m.spans.length-1;
+    return m.spans.map((sp,i)=>{
+      const a = yr(sp[0]), b = (i===last && !m.end) ? "present" : yr(sp[1]);
+      return a===b ? a : `${a}–${b}`;
+    }).join(", ");
+  }
+  return m && m.start ? `${yr(m.start)}–${m.end ? yr(m.end) : "present"}` : (m?.term || "");
+};
+const roleLine = m => {
+  if(!m) return "";
+  const base = /\d{4}/.test(m.role||"") ? m.role : `${m.role||""} · ${spanText(m)}`;
+  return m.candidacy_2026 ? `${base} · Candidate for ${m.candidacy_2026}, 2026` : base;
+};
+
+const state = { q:"", cat:new Set(), outcome:"", member:"", stance:"", sort:"new", hideUnanimous:false, compare:new Set(), dateFrom:"", dateTo:"", eras:new Set(), voteId:"" };
+/* Summaries cut to 25 words end in "…": hover shows the full text, tap/click expands it in place. */
+/* Escape text and wrap occurrences of the current search in <mark>. */
+function hl(text){
+  const q = state.q;
+  if(!q) return esc(text);
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  let out = "", last = 0, m;
+  while((m = re.exec(text))){
+    out += esc(text.slice(last, m.index)) + '<mark class="hl">' + esc(m[0]) + "</mark>";
+    last = m.index + m[0].length;
+    if(m[0].length === 0) re.lastIndex++;
+  }
+  return out + esc(text.slice(last));
+}
+function summaryHtml(v){
+  const s = v.summary || "";
+  if(!(v.summary_full && s.endsWith("…"))) return hl(s);
+  return `<span class="sum-text" data-short="${esc(s.slice(0,-1))}" data-full="${esc(v.summary_full)}">${hl(s.slice(0,-1))}<button type="button" class="sum-more" aria-expanded="false" aria-label="Show the full description" title="${esc(v.summary_full)}">…</button></span>`;
+}
+function toggleSummary(btn){
+  const span = btn.closest('.sum-text'), open = btn.getAttribute('aria-expanded') === "true";
+  while(span.firstChild && span.firstChild !== btn) span.removeChild(span.firstChild);   // keep search highlights on expand
+  btn.insertAdjacentHTML('beforebegin', hl(open ? span.dataset.short : span.dataset.full));
+  btn.textContent = open ? "…" : " (less)";
+  btn.setAttribute('aria-expanded', String(!open));
+  btn.title = open ? span.dataset.full : "Show less";
+}
+
+/* A vote has one main category (used for counts) and optional "also" categories. */
+const catsOf = v => [v.category, ...(v.also||[])];
+const CAT_ORDER = ["Housing","Transportation","Public Safety","Budget & Finance","Parks & Environment","Economic Development","Land Use & Development","Governance","Contracts & Purchasing","Other"];
+let ERAS = [], ERAS_BY_KEY = {};
+
+// Derive "council makeup" eras directly from the data rather than hardcoding
+// election dates: each member's tenure is [first vote they appear in, last
+// vote they appear in], and the roster changes exactly at those boundaries.
+function computeEras(){
+  const spans = DATA.members.map(m=>{
+    let start=null, end=null;
+    for(const v of DATA.votes){
+      if(m.short in v.votes){
+        if(start===null || v.date < start) start = v.date;
+        if(end===null || v.date > end) end = v.date;
+      }
+    }
+    return start ? {short:m.short, start, end} : null;
+  }).filter(Boolean);
+  if(!spans.length) return [];
+  const overallEnd = spans.reduce((a,s)=>s.end>a?s.end:a, spans[0].end);
+  const boundaries = [...new Set(spans.map(s=>s.start))].sort();
+  return boundaries.map((b,i)=>{
+    const end = i+1 < boundaries.length ? boundaries[i+1] : overallEnd;
+    const roster = spans.filter(s=> s.start<=b && s.end>=b).map(s=>s.short);
+    return {key:b, start:b, end, roster};
+  });
+}
+
+/* Summary for the Compare filter: counts only votes where every selected
+   member was seated and present (absences and recusals are left out, abstentions
+   count as a position). Window and sample size are shown because pairs that
+   overlapped briefly have small samples. */
+function compareSummary(shorts){
+  const base = DATA.votes.filter(v => shorts.every(s => s in v.votes) &&
+    shorts.every(s => v.votes[s] !== "absent" && v.votes[s] !== "recused"));
+  const names = shorts.map(s => MBY[s] ? lastName(MBY[s]) : s);
+  const same = v => shorts.every(s => v.votes[s] === v.votes[shorts[0]]);
+  const n = base.length, agree = base.filter(same).length;
+  if(!n) return {n:0, html:`<div class="cs-head">${esc(names.join(" and "))}</div><div class="cs-sub warn">No votes on record where all of them were seated and present, so there is nothing to compare. They may never have served together.</div>`};
+  const dates = base.map(v=>v.date).sort();
+  const split = base.filter(v=>!same(v));
+  const hard = split.filter(v=>shorts.some(s=>v.votes[s]==="aye") && shorts.some(s=>v.votes[s]==="no")).length;
+  const abst = split.length - hard;
+  const cats = {};
+  for(const v of base){ const c = (cats[v.category] ||= {n:0,a:0}); c.n++; if(same(v)) c.a++; }
+  const rows = Object.entries(cats).sort((a,b)=>b[1].n-a[1].n).map(([c,x]) =>
+    `<tr><td>${esc(c)}</td><td>${Math.round(100*x.a/x.n)}% agree</td><td>${x.n} vote${x.n===1?"":"s"}</td></tr>`).join("");
+  const small = n < 30 ? ` <span class="warn">Small sample (${n} votes): read the percentage with caution.</span>` : "";
+  return {n, html: `<div class="cs-head">${esc(names.join(" vs. "))}: ${Math.round(100*agree/n)}% agreement (${agree} of ${n} votes)</div>
+    <div class="cs-sub">Window with all selected members seated and present: ${esc(dates[0])} to ${esc(dates[n-1])}. ${hard} hard split${hard===1?"":"s"} (aye vs. no), ${abst} involving an abstention. Absences and recusals are excluded. Categories below use each vote's main category.${small}</div>
+    <table>${rows}</table>`};
+}
+
+function goToCompare(shorts, opts={}){
+  resetState(); state.compare = new Set(shorts);
+  switchTab('votes'); syncControls(); renderVotes();
+}
+
+init();
+async function init(){
+  try{
+    const r = await fetch('votes.json', {cache:'no-store'});
+    if(!r.ok) throw 0;
+    DATA = await r.json();
+    DATA.sample = false;
+  }catch(e){
+    if(new URLSearchParams(location.search).has('sample')){ DATA = SAMPLE_DATA; }
+    else{
+      document.querySelector('main').innerHTML = '<div class="prose"><p><strong>The voting record could not be loaded.</strong> Please refresh the page or try again later. The data file (votes.json) is missing or unreachable, so nothing is shown rather than showing placeholder data.</p></div>';
+      $('#dataPill').textContent = "Data unavailable";
+      return;
+    }
+  }
+  DATA.votes.sort((a,b)=> b.date.localeCompare(a.date));
+  MBY = Object.fromEntries(DATA.members.map(m=>[m.short,m]));
+  buildStatic();
+  renderAll();
+  applyHash();
+  hashLive = true; writeHash();
+  window.onhashchange = applyHash;
+}
+
+/* Hash-based deep links: #member=SHORT or #category=Name so a click on a
+   member or category can be shared/bookmarked as its own URL. */
+function resetState(){
+  state.q=""; state.cat.clear(); state.outcome=""; state.member=""; state.stance=""; state.sort="new";
+  state.hideUnanimous=false; state.compare.clear(); state.dateFrom=""; state.dateTo=""; state.eras.clear(); state.voteId="";
+}
+
+/* Every filter lives in the URL hash, so any view can be bookmarked or shared:
+   #q=rent&cat=Housing&member=TD&stance=dissent&from=2022-01-01&vote=m123-4 ...
+   (legacy #member=, #category= and #compare= links still work). */
+function stateToHash(){
+  const p = new URLSearchParams();
+  if(state.voteId) p.set('vote', state.voteId);
+  if(state.q) p.set('q', state.q);
+  if(state.cat.size) p.set('cat', [...state.cat].join('|'));
+  if(state.outcome) p.set('outcome', state.outcome);
+  if(state.member) p.set('member', state.member);
+  if(state.stance) p.set('stance', state.stance);
+  if(state.sort !== "new") p.set('sort', state.sort);
+  if(state.hideUnanimous) p.set('hide', '1');
+  if(state.dateFrom) p.set('from', state.dateFrom);
+  if(state.dateTo) p.set('to', state.dateTo);
+  if(state.eras.size) p.set('era', [...state.eras].join(','));
+  if(state.compare.size) p.set('cmp', [...state.compare].join(','));
+  return p.toString();
+}
+let hashLive = false;   // stay quiet until the initial #hash has been read
+function writeHash(){
+  if(!hashLive) return;
+  const h = stateToHash();
+  if(h === location.hash.slice(1)) return;
+  try{ history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); }catch(e){ /* file:// etc. */ }
+}
+function applyHash(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  const keys = ['vote','q','cat','outcome','member','stance','sort','hide','from','to','era','cmp','category','compare'];
+  if(!keys.some(k => h.has(k))){ resetState(); syncControls(); renderVotes(); return; }
+  resetState();
+  state.voteId = h.get('vote') || "";
+  state.q = (h.get('q') || "").toLowerCase();
+  const cats = h.get('cat') || h.get('category');
+  if(cats) cats.split('|').forEach(c => c && state.cat.add(c));
+  state.outcome = h.get('outcome') || "";
+  const m = h.get('member'); if(m && MBY[m]) state.member = m;
+  state.stance = state.member ? (h.get('stance') || "") : "";
+  state.sort = ["old","closest"].includes(h.get('sort')) ? h.get('sort') : "new";
+  state.hideUnanimous = h.get('hide') === '1';
+  state.dateFrom = h.get('from') || ""; state.dateTo = h.get('to') || "";
+  (h.get('era') || "").split(',').filter(k => ERAS_BY_KEY[k]).forEach(k => state.eras.add(k));
+  (h.get('cmp') || h.get('compare') || "").split(',').filter(s => MBY[s]).forEach(s => state.compare.add(s));
+  if(state.compare.size < 2) state.compare.clear();
+  switchTab('votes');
+  syncControls();
+  renderVotes();
+}
+
+/* Push the state into every filter control (used after links, hash changes and removals). */
+function syncControls(){
+  if($('#q').value.toLowerCase() !== state.q) $('#q').value = state.q;
+  $('#fOutcome').value = state.outcome;
+  $('#fMember').value = state.member;
+  $('#fStance').value = state.stance; $('#fStance').hidden = !state.member;
+  $('#fSort').value = state.sort;
+  $('#fHideUnanimous').checked = state.hideUnanimous;
+  $('#fDateFrom').value = state.dateFrom; $('#fDateTo').value = state.dateTo;
+  document.querySelectorAll('#catChips .chip, #tagChips .chip').forEach(x=>{
+    const on = state.cat.has(x.dataset.cat); x.classList.toggle('on',on); x.setAttribute('aria-pressed',on);
+  });
+  document.querySelectorAll('#eraChips .chip').forEach(x=>{
+    const on = state.eras.has(x.dataset.key); x.classList.toggle('on',on); x.setAttribute('aria-pressed',on);
+  });
+  document.querySelectorAll('#compareChips .chip').forEach(x=>{
+    const on = state.compare.has(x.dataset.short); x.classList.toggle('on',on); x.setAttribute('aria-pressed',on);
+  });
+}
+
+/* Removable chips for every active filter, so it's always clear why a list is short. */
+function activeFilters(){
+  const out = [];
+  const name = s => MBY[s] ? lastName(MBY[s]) : s;
+  const stanceText = {aye:"voted Aye", no:"voted No", abstain:"abstained", absent:"was absent", dissent:"was in the minority"};
+  if(state.voteId) out.push({label:"Single vote", clear:()=>{state.voteId="";}});
+  if(state.q) out.push({label:`Search: “${state.q}”`, clear:()=>{state.q="";}});
+  if(state.outcome) out.push({label:{passed:"Passed",failed:"Failed",divided:"Divided",unanimous:"Unanimous"}[state.outcome]||state.outcome, clear:()=>{state.outcome="";}});
+  if(state.member) out.push({label:`${name(state.member)}${state.stance?": "+(stanceText[state.stance]||state.stance):""}`, clear:()=>{state.member=""; state.stance="";}});
+  for(const c of state.cat) out.push({label:c, clear:()=>{state.cat.delete(c);}});
+  if(state.hideUnanimous) out.push({label:"Hiding unanimous votes", clear:()=>{state.hideUnanimous=false;}});
+  if(state.dateFrom || state.dateTo) out.push({label:`${state.dateFrom||"…"} to ${state.dateTo||"…"}`, clear:()=>{state.dateFrom=""; state.dateTo="";}});
+  for(const k of state.eras){ const e = ERAS_BY_KEY[k]; if(e) out.push({label:`Council ${e.start.slice(0,4)}–${e.end.slice(0,4)}`, clear:()=>{state.eras.delete(k);}}); }
+  if(state.compare.size >= 2) out.push({label:`Comparing ${[...state.compare].map(name).join(" vs. ")}`, clear:()=>{state.compare.clear();}});
+  return out;
+}
+function renderActiveFilters(){
+  const box = $('#activeFilters'), list = activeFilters();
+  const nf = list.filter(f => !f.label.startsWith("Search:")).length;   // the search box is always visible
+  $('#filterToggle').textContent = nf ? `Filters (${nf})` : "Filters";
+  box.hidden = !list.length;
+  if(!list.length){ box.innerHTML = ""; return; }
+  box.innerHTML = `<span class="af-label">Showing:</span>` + list.map((f,i)=>
+      `<span class="af-chip">${esc(f.label)}<button type="button" class="af-x" data-i="${i}" aria-label="Remove filter: ${esc(f.label)}">×</button></span>`).join("")
+    + `<button type="button" class="clear-btn" id="clearBtn">Clear all</button>`;
+  box.querySelectorAll('.af-x').forEach(b => b.onclick = () => { list[+b.dataset.i].clear(); syncControls(); renderVotes(); });
+  $('#clearBtn').onclick = () => { resetState(); syncControls(); renderVotes(); };
+}
+
+$('#filterToggle').onclick = () => {
+  const box = $('#filterBody'), open = box.classList.toggle('collapsed') === false;
+  $('#filterToggle').setAttribute('aria-expanded', String(open));
+};
+
+function goToMember(short, opts={}){
+  if(!MBY[short]) return;
+  resetState(); state.member = short; state.stance = opts.stance ?? "";
+  switchTab('votes'); syncControls(); renderVotes();
+}
+
+function goToCategory(cat, opts={}){
+  resetState(); state.cat = new Set([cat]);
+  switchTab('votes'); syncControls(); renderVotes();
+}
+
+function goToMemberCategoryDissent(short, cat){
+  if(!MBY[short]) return;
+  resetState(); state.member = short; state.stance = "dissent"; state.cat = new Set([cat]);
+  switchTab('votes'); syncControls(); renderVotes();
+}
+
+function goToVote(id){
+  resetState(); state.voteId = id;
+  switchTab('votes'); syncControls(); renderVotes();
+}
+
+const isDraft = v => (DATA.draft_minutes_dates||[]).includes(v.date);
+const granicus = (id, sec) => "https://alameda.granicus.com/player/clip/"+encodeURIComponent(id)+(sec ? "?entrytime="+sec : "");
+// the video and transcript link(s) for a vote. Item-level links are matched
+// automatically: from the City's agenda index (Granicus, 2013 to early 2021) or
+// from where the item is named in YouTube's captions (2025 on); the rest link to
+// the whole meeting.
+const youtube = (id, sec) => "https://www.youtube.com/watch?v="+encodeURIComponent(id)+(sec ? "&t="+sec+"s" : "");
+function videoLinks(v){
+  const out = [];
+  if(v.yt_at){
+    out.push({href: youtube(v.yt_at[0], v.yt_at[1]), item: true, consent: v.yt_at[2]==="c",
+              label: v.yt_at[2]==="c" ? "Watch consent calendar" : "Watch item"});
+  } else if(v.video_at){
+    out.push({href: granicus(v.video_at[0], v.video_at[1]), item: true, label: "Watch item"});
+  } else {
+    const ids = (DATA.meeting_videos||{})[v.date]||[];
+    ids.forEach((id,i) => out.push({href: granicus(id), label: ids.length>1 ? `Video ${i+1} of ${ids.length}` : "Watch video"}));
+  }
+  if((DATA.meeting_youtube||{})[v.date])
+    out.push({href: "transcripts/"+v.date+".html"+(v.yt_at ? `#v=${encodeURIComponent(v.yt_at[0])}&t=${v.yt_at[1]}` : ""),
+              label: "Transcript", transcript: true});
+  return out;
+}
+function csvCell(x){ const s = String(x ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+function downloadCsv(){
+  const rows = filteredVotes();
+  const head = ["date","category","also_tagged","result","ayes","noes","title","summary","known_discrepancy","meeting_record","video","transcript","draft_minutes",...DATA.members.map(m=>m.name)];
+  const lines = [head.map(csvCell).join(",")];
+  for(const v of rows){
+    const t = tally(v);
+    lines.push([v.date, v.category, (v.also||[]).join("; "), v.result, t.aye, t.no, v.title, v.summary, v.note||"", v.url||"", videoLinks(v).filter(l=>!l.transcript).map(l=>l.href).join(" "), videoLinks(v).filter(l=>l.transcript).map(l=>new URL(l.href,location.href).href).join(" "), isDraft(v) ? "yes" : "",
+                ...DATA.members.map(m=>v.votes[m.short]||"")].map(csvCell).join(","));
+  }
+  const blob = new Blob(["\ufeff"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "alameda-roll-call-votes.csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+function copyText(text, btn){
+  const done = () => { if(btn){ const old = btn.textContent; btn.textContent = "Copied ✓"; setTimeout(()=>btn.textContent = old, 1600); } };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, () => window.prompt("Copy this link:", text)); }
+  else window.prompt("Copy this link:", text);
+}
+
+function switchTab(view){
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected', x.dataset.view===view ? 'true':'false'));
+  for(const v of ['votes','members','agreement','categories','about'])
+    document.getElementById('view-'+v).hidden = (v !== view);
+  window.scrollTo({top:0});
+}
+
+
+
+
+function tally(v){
+  // Tally from the vote's own recorded positions, not the full all-time
+  // roster -- most members in DATA.members weren't on the council for any
+  // given historical vote, and defaulting them to "absent" would falsely
+  // show a 13-member roll call for a 5-member meeting.
+  const t = {aye:0,no:0,abstain:0,absent:0};
+  for(const short in v.votes){
+    const p = v.votes[short];
+    t[p === "recused" ? "absent" : p]++;
+  }
+  return t;
+}
+const isUnanimous = v => { const t = tally(v); return t.no===0 && t.abstain===0; };
+const margin = v => { const t = tally(v); return Math.abs(t.aye - t.no); };
+function majority(v){ const t = tally(v); return t.aye >= t.no ? "aye" : "no"; }
+
+function buildStatic(){
+  // status pill + about
+  const pill = $('#dataPill'), about = $('#aboutStatus');
+  if(DATA.sample){
+    pill.textContent = "Illustrative sample data";
+    pill.className = "data-pill sample";
+    about.innerHTML = "<strong>You are viewing illustrative sample data.</strong> Vote positions shown are placeholders demonstrating the interface, not the official record. Run the Legistar export (scrape_votes.py) and place votes.json next to this page to load the real record.";
+  }else{
+    const first = DATA.votes[DATA.votes.length-1]?.date || "", last = DATA.votes[0]?.date || "";
+    pill.textContent = `Automated record · ${DATA.votes.length} votes · ${first} – ${last}`;
+    pill.className = "data-pill live";
+    about.textContent = `This copy of the record was generated ${DATA.generated || "recently"} from the City of Alameda's Legistar system and contains ${DATA.votes.length} roll-call votes. Data through ${last} (the most recent meeting whose minutes have been published).`;
+  }
+  const disc = DATA.votes.filter(v=>v.note), box = $('#aboutDiscrepancies');
+  if(box) box.innerHTML = disc.length
+    ? `<p>In these votes the City Clerk's own minutes contradict themselves and we can't tell which part is right. The data shows what the names say; each vote carries a note.</p><ul>${disc.map(v=>`<li><a href="#vote=${esc(v.id)}">${esc(v.date)}</a>: ${esc(v.summary||v.title)} ${esc(v.note)}</li>`).join("")}</ul>`
+    : `<p>None are currently listed.</p>`;
+  const cand = DATA.members.filter(m=>m.candidacy_2026);
+  const noRec = DATA.council_candidates_no_record || [];
+  const ac = $('#aboutCandidates');
+  if(ac) ac.textContent = (cand.length ? `Candidates for Mayor with a council voting record on this site: ${cand.map(m=>m.name).join(", ")}. ` : "") +
+    (noRec.length ? `Candidates for City Council with no council voting record: ${noRec.join(", ")}.` : "") +
+    ` Candidate lists were supplied by the site's maintainer; confirm against the Alameda County Registrar of Voters.`;
+  $('#footGen').textContent = DATA.sample ? "Sample dataset for demonstration" : ("Data through " + (DATA.votes[0]?.date || "?") + " · Generated " + (DATA.generated || ""));
+
+  // member filter -- split into current vs. former based on who actually
+  // appears in the most recent meetings' roll calls, since the term text
+  // (e.g. "2025-2028") isn't consistently phrased with "present" for
+  // newly-elected members the way older entries are.
+  const fm = $('#fMember');
+  const recentShorts = new Set();
+  for(const v of DATA.votes.slice(0,30)) for(const short in v.votes) recentShorts.add(short);
+  const grpCurrent = document.createElement('optgroup'); grpCurrent.label = "Current council";
+  const grpFormer = document.createElement('optgroup'); grpFormer.label = "Former members";
+  for(const m of DATA.members){
+    const o = document.createElement('option');
+    o.value = m.short; o.textContent = m.name;
+    (recentShorts.has(m.short) ? grpCurrent : grpFormer).appendChild(o);
+  }
+  fm.appendChild(grpCurrent); fm.appendChild(grpFormer);
+  // council-makeup eras (derived from data, see computeEras())
+  ERAS = computeEras();
+  ERAS_BY_KEY = Object.fromEntries(ERAS.map(e=>[e.key,e]));
+  const eraWrap = $('#eraChips');
+  for(const era of ERAS){
+    const rosterNames = era.roster.map(s=>MBY[s]?lastName(MBY[s]):s).join(", ");
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.key = era.key;
+    b.textContent = `${era.start.slice(0,4)}–${era.end.slice(0,4)}`;
+    b.title = `Council: ${rosterNames}`;
+    b.setAttribute('aria-pressed','false');
+    b.onclick = () => {
+      state.eras.has(era.key) ? state.eras.delete(era.key) : state.eras.add(era.key);
+      b.classList.toggle('on'); b.setAttribute('aria-pressed', state.eras.has(era.key));
+      renderVotes();
+    };
+    eraWrap.appendChild(b);
+  }
+  // compare-members chips
+  const cmpWrap = $('#compareChips');
+  for(const m of DATA.members){
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = lastName(m); b.dataset.short = m.short;
+    b.title = `Add ${m.name} to the comparison`;
+    b.setAttribute('aria-pressed','false');
+    b.onclick = () => {
+      state.compare.has(m.short) ? state.compare.delete(m.short) : state.compare.add(m.short);
+      b.classList.toggle('on'); b.setAttribute('aria-pressed', state.compare.has(m.short));
+      renderVotes();
+    };
+    cmpWrap.appendChild(b);
+  }
+  // category chips
+  const mainCats = new Set(DATA.votes.map(v=>v.category));
+  const cats = [...mainCats].sort();
+  // topic tags only ever appear as "also" values, never as a main category
+  const tags = [...new Set(DATA.votes.flatMap(v=>v.also||[]))].filter(c=>!mainCats.has(c)).sort();
+  for(const c of [...cats, ...tags]){
+    const wrap = mainCats.has(c) ? $('#catChips') : $('#tagChips');
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = c; b.dataset.cat = c;
+    if(!mainCats.has(c)) b.title = "Topic tag: shown on votes that touch this topic, whatever their main category";
+    b.setAttribute('aria-pressed','false');
+    b.onclick = () => {
+      state.cat.has(c) ? state.cat.delete(c) : state.cat.add(c);
+      b.classList.toggle('on'); b.setAttribute('aria-pressed', state.cat.has(c));
+      renderVotes();
+    };
+    wrap.appendChild(b);
+  }
+  // controls
+  let qTimer = null;
+  $('#q').oninput = e => {
+    const val = e.target.value.toLowerCase();
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => { state.q = val; renderVotes(); }, 200);
+  };
+  $('#fOutcome').onchange = e => { state.outcome = e.target.value; renderVotes(); };
+  $('#fMember').onchange = e => { state.member = e.target.value; if(!state.member) state.stance=""; syncControls(); renderVotes(); };
+  $('#fStance').onchange = e => { state.stance = e.target.value; renderVotes(); };
+  $('#fSort').onchange = e => { state.sort = e.target.value; renderVotes(); };
+  $('#fHideUnanimous').onchange = e => { state.hideUnanimous = e.target.checked; renderVotes(); };
+  $('#fDateFrom').onchange = e => { state.dateFrom = e.target.value; renderVotes(); };
+  $('#fDateTo').onchange = e => { state.dateTo = e.target.value; renderVotes(); };
+  $('#dataPill').onclick = () => document.querySelector('.tab[data-view="about"]').click();
+  $('#noticeMore').onclick = () => document.querySelector('.tab[data-view="about"]').click();
+  $('#csvBtn').onclick = downloadCsv;
+  $('#copyViewBtn').onclick = e => copyText(location.href, e.target);
+  // tabs
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+    t.setAttribute('aria-selected','true');
+    for(const v of ['votes','members','agreement','categories','about'])
+      document.getElementById('view-'+v).hidden = (v !== t.dataset.view);
+  });
+}
+
+function renderAll(){ renderStats(); renderVotes(); renderMembers(); renderMatrix(); renderCats(); }
+
+function renderStats(){
+  const vs = DATA.votes;
+  const uni = vs.filter(isUnanimous).length;
+  const divided = vs.length - uni;
+  const first = vs[vs.length-1]?.date || "", last = vs[0]?.date || "";
+  $('#statsBand').innerHTML =
+    `<strong>${esc(vs.length)}</strong> roll-call votes · `
+    + `<strong>${esc(first.slice(0,7))}</strong> → <strong>${esc(last.slice(0,7))}</strong> · `
+    + `<strong>${esc(Math.round(100*uni/Math.max(1,vs.length)))}%</strong> unanimous · `
+    + `<strong>${esc(divided)}</strong> divided · `
+    + `<strong>${esc(DATA.members.length)}</strong> members covered (all-time)`;
+}
+
+function filteredVotes(){
+  if(state.voteId) return DATA.votes.filter(v => v.id === state.voteId);
+  let vs = DATA.votes.filter(v=>{
+    if(state.q && !(v.title+" "+(v.summary||"")).toLowerCase().includes(state.q)) return false;
+    if(state.cat.size && !catsOf(v).some(c => state.cat.has(c))) return false;
+    if(state.outcome==="passed" && v.result!=="passed") return false;
+    if(state.outcome==="failed" && v.result!=="failed") return false;
+    if(state.outcome==="divided" && tally(v).no===0) return false;
+    if(state.outcome==="unanimous" && !isUnanimous(v)) return false;
+    if(state.hideUnanimous && isUnanimous(v)) return false;
+    if(state.dateFrom && v.date < state.dateFrom) return false;
+    if(state.dateTo && v.date > state.dateTo) return false;
+    if(state.eras.size){
+      let inAny = false;
+      for(const key of state.eras){
+        const era = ERAS_BY_KEY[key];
+        if(era && v.date >= era.start && v.date <= era.end){ inAny = true; break; }
+      }
+      if(!inAny) return false;
+    }
+    if(state.compare.size >= 2){
+      const shorts = [...state.compare];
+      if(!shorts.every(s => s in v.votes)) return false;
+      const positions = shorts.map(s => v.votes[s]);
+      if(positions.some(p => p==="absent" || p==="recused")) return false;
+      if(positions.every(p => p===positions[0])) return false;
+    }
+    if(state.member){
+      // Gate on the member actually appearing in this vote's own roll call --
+      // most members only served part of the covered period, so a vote from
+      // outside their tenure isn't a real "absence," it's just N/A.
+      if(!(state.member in v.votes)) return false;
+      const p = v.votes[state.member];
+      if(state.stance==="dissent"){
+        if(p==="absent"||p==="recused"||p==="abstain") return false;
+        if(p === majority(v)) return false;
+      } else if(state.stance && p !== state.stance) return false;
+    }
+    return true;
+  });
+  if(state.sort==="old") vs = [...vs].reverse();
+  if(state.sort==="closest") vs = [...vs].sort((a,b)=>margin(a)-margin(b));
+  return vs;
+}
+
+const PAGE_SIZE = 150;
+let pageShown = PAGE_SIZE, pageFilterKey = "";
+
+function renderVotes(){
+  const vsAll = filteredVotes();
+  const filterKey = JSON.stringify([state.q,[...state.cat],state.outcome,state.member,state.stance,state.sort,state.hideUnanimous,[...state.compare],state.dateFrom,state.dateTo,[...state.eras]]);
+  if(filterKey !== pageFilterKey){ pageFilterKey = filterKey; pageShown = PAGE_SIZE; }
+  const vs = vsAll.slice(0, pageShown);
+  const note = $('#compareNote');
+  if(state.compare.size >= 2){
+    const names = [...state.compare].map(s => MBY[s] ? lastName(MBY[s]) : s).join(" vs. ");
+    note.textContent = `Showing votes where ${names} disagreed (both present, different positions) — ${vsAll.length} found.`;
+    note.hidden = false;
+    const cs = $('#compareSummary'); cs.innerHTML = compareSummary([...state.compare]).html; cs.hidden = false;
+  } else {
+    note.hidden = true;
+    $('#compareSummary').hidden = true;
+  }
+  if(state.member && MBY[state.member]){
+    const m = MBY[state.member];
+    $('#countLine').innerHTML = `<strong>${esc(m.name)}</strong> (${esc(roleLine(m))}) — ${vsAll.length} vote${vsAll.length===1?"":"s"} on record`
+      + (state.stance ? ` matching this filter` : "");
+  } else {
+    $('#countLine').textContent = vsAll.length > vs.length
+      ? `${vs.length} of ${vsAll.length} matching votes shown (of ${DATA.votes.length} total)`
+      : `${vsAll.length} of ${DATA.votes.length} votes shown`;
+  }
+  if(state.voteId){
+    $('#countLine').innerHTML = `Showing one vote · <button type="button" class="clear-btn" id="allVotesBtn">Show all votes</button> · <button type="button" class="clear-btn" id="copyVoteBtn">Copy link to this vote</button>`;
+    $('#allVotesBtn').onclick = () => { resetState(); syncControls(); renderVotes(); };
+    $('#copyVoteBtn').onclick = e => copyText(location.href, e.target);
+  }
+  $('#csvBtn').hidden = $('#copyViewBtn').hidden = false;
+  renderActiveFilters(); writeHash();
+  const list = $('#voteList');
+  if(!vs.length){ list.innerHTML = `<div class="empty">No votes match these filters. Remove a filter above, or broaden the search.</div>`; $('#csvBtn').hidden = true; return; }
+  list.innerHTML = vs.map(v=>{
+    const t = tally(v);
+    // Render chips from this vote's own recorded members, not the fixed
+    // current-council list -- historical votes include members no longer
+    // (or not yet) on the council.
+    const roll = Object.keys(v.votes).map(short=>{
+      const p = v.votes[short];
+      const m = MBY[short];
+      const label = {aye:"Aye",no:"No",abstain:"Abstain",absent:"Absent",recused:"Recused"}[p] || p;
+      const name = m ? m.name : short;
+      const explain = {
+        absent: " (wasn't recorded as present for this item)",
+        recused: " (stepped out for a conflict of interest on this item)"
+      }[p] || "";
+      return `<button class="rc ${esc(p)}" type="button" data-short="${esc(short)}" title="View ${esc(name)}'s voting record — ${esc(label)} here${explain}">
+        <b>${esc(lastName(m))}</b> ${esc(label)}</button>`;
+    }).join("");
+    const links = [];
+    if(v.url) links.push(`<a href="${esc(v.url)}" rel="noopener">Meeting record</a>`);
+    if(isDraft(v)) links.push(`<span class="draft-badge" title="The City Council has not yet approved the minutes of this meeting. This vote may be corrected when they are approved.">Draft minutes</span>`);
+    videoLinks(v).forEach(l => links.push(`<a href="${esc(l.href)}" rel="noopener"${l.transcript ? "" : ' target="_blank"'} title="${esc(l.transcript ? "Automatic captions of the meeting, opened near this item (unofficial, may contain errors)" : l.consent ? "Opens the meeting video where the consent calendar was taken up; this item was approved with the others and may not be named" : l.item ? "Opens the meeting video near the start of this agenda item (matched automatically; confirm it is the right item)" : "Opens the whole meeting recording; the City's player lists the agenda items")}">${esc(l.label)}${l.transcript ? "" : " ↗"}</a>`));
+    // Alameda Post: an article matched to this item; else (2022 on, when the
+    // Post's archive exists) an expandable list of the council stories published
+    // around this meeting, or a keyword search when there are none; before 2022,
+    // no Post link at all.
+    const clip = t => t.length > 64 ? t.slice(0,61).trimEnd()+"…" : t;
+    const postLink = (a, prefix) => `<a href="${esc(a.url)}" rel="noopener" target="_blank" title="${esc(a.title)} (Alameda Post, ${esc(a.date)})">${prefix}“${esc(clip(a.title))}” ↗</a>`;
+    const stories = (DATA.post_council_stories||{})[v.date] || [];
+    let storiesPanel = "";
+    const archiveStart = DATA.post_archive_start || "2022-01-01";
+    if(v.coverage && v.coverage.length){
+      v.coverage.forEach(a => links.push(postLink(a, "Alameda Post: ")));
+    }else if(v.date >= archiveStart){
+      const mediaUrl = mediaSearchUrl(v);
+      if(stories.length){
+        links.push(`<button type="button" class="ap-toggle" aria-expanded="false">Alameda Post council stories ▾</button>`);
+        storiesPanel = `<div class="ap-panel" hidden>
+          <div class="ap-note">Alameda Post stories tagged "City Council" around the ${esc(fmtShort(v.date))} meeting. They cover the meeting in general, not necessarily this item.</div>
+          <ul>${stories.map(s=>`<li><a href="${esc(s.url)}" rel="noopener" target="_blank">${esc(s.title)} ↗</a> <span class="ap-when">${esc(fmtShort(s.date))}, ${s.kind==="recap"?"after":"before"} the meeting</span></li>`).join("")}</ul>
+          ${mediaUrl?`<a class="ap-search" href="${esc(mediaUrl)}" rel="noopener" target="_blank">Search the Post for this item ↗</a>`:""}
+        </div>`;
+      }else if(mediaUrl){
+        links.push(`<a href="${esc(mediaUrl)}" rel="noopener" target="_blank">Search Alameda Post ↗</a>`);
+      }
+    }
+    const actions = `<a class="vlink" href="#vote=${esc(v.id)}" title="A link that opens only this vote">Link to this vote</a>
+      <a class="vreport" href="${esc(reportUrl(v))}" rel="noopener" target="_blank" title="Open a pre-filled issue on GitHub">Report an error</a>`;
+    const linkLine = `<div class="vsources">${links.join("")}</div><div class="vactions">${actions}</div>`;
+    const spine = Object.keys(v.votes).map(s => `<i class="${esc(v.votes[s])}"></i>`).join("");
+    return `<article class="vote${isUnanimous(v)?"":" divided"}"><span class="spine" aria-hidden="true">${spine}</span>
+      <div class="vote-top">
+        <span class="vdate">${esc(v.date)}</span>
+        <button class="vcat" type="button" data-cat="${esc(v.category)}" title="Main category. See all ${esc(v.category)} votes">${esc(v.category)}</button>${(v.also||[]).map(c=>`<button class="vcat vcat-also" type="button" data-cat="${esc(c)}" title="Also related to ${esc(c)}. See all ${esc(c)} votes">+ ${esc(c)}</button>`).join("")}
+        <span class="vresult ${esc(v.result)}">${v.result==="passed"?"Passed":"Failed"} ${t.aye}–${t.no}</span>
+      </div>
+      <div class="vtitle">${summaryHtml(v)}</div>
+      <div class="vofficial"><span class="vo-label">Official title</span> ${hl(v.title)}</div>${v.title.length > 50 ? `<button type="button" class="vo-more" aria-expanded="false">Show full title</button>` : ""}
+      ${v.note ? `<div class="vnote"><b>Known discrepancy:</b> ${esc(v.note)}</div>` : ""}<div class="vfoot">${linkLine}</div>${storiesPanel}
+      <div class="roll">${roll}</div>
+    </article>`;
+  }).join("");
+  if(vsAll.length > vs.length){
+    list.insertAdjacentHTML('beforeend', `<button class="linklike" type="button" id="loadMoreBtn" style="display:block;margin:14px auto;font-size:14px">Show ${Math.min(PAGE_SIZE, vsAll.length-vs.length)} more (${vsAll.length-vs.length} remaining) →</button>`);
+    $('#loadMoreBtn').onclick = () => { pageShown += PAGE_SIZE; renderVotes(); };
+  }
+  list.querySelectorAll('.sum-more').forEach(b=> b.onclick = () => toggleSummary(b));
+  list.querySelectorAll('.vo-more').forEach(b=>{   // only offer "show full title" when the title is really cut off
+    const el = b.previousElementSibling;
+    if(el.scrollHeight <= el.clientHeight + 1) b.remove();
+  });
+  list.querySelectorAll('.vo-more').forEach(b=> b.onclick = () => {
+    const el = b.previousElementSibling, open = el.classList.toggle('open');
+    b.textContent = open ? "Show less" : "Show full title"; b.setAttribute('aria-expanded', String(open));
+  });
+  list.querySelectorAll('.ap-toggle').forEach(b=> b.onclick = () => {
+    const panel = b.closest('article').querySelector('.ap-panel');
+    const open = panel.hidden;
+    panel.hidden = !open;
+    b.setAttribute('aria-expanded', String(open));
+    b.textContent = open ? "Alameda Post council stories ▴" : "Alameda Post council stories ▾";
+  });
+  list.querySelectorAll('.rc[data-short]').forEach(b=> b.onclick = () => goToMember(b.dataset.short));
+  list.querySelectorAll('.vcat[data-cat], .vcat-also[data-cat]').forEach(b=> b.onclick = () => goToCategory(b.dataset.cat));
+}
+
+/* Best-effort search link to Alameda Post's archive for independent local
+   coverage of this item. Alameda Post (alamedapost.com) is a member of the
+   Institute for Nonprofit News and is the closest thing Alameda has to a
+   dedicated local-government beat reporter; this is a search stub, not a
+   guaranteed match -- there may be no article for a given routine item. */
+const REPO_ISSUES = "https://github.com/Alameda-RollCall/Alameda-RollCall/issues/new";
+/* Pre-filled GitHub issue so a reader can flag a mistake in one click. */
+function reportUrl(v){
+  const body = `Vote: ${v.id} (${v.date})\nTitle: ${v.title.slice(0,240)}\nMeeting record: ${v.url||""}\nLink on the site: ${location.origin}${location.pathname}#vote=${v.id}\n\nWhat looks wrong (positions, result, category, summary)?\n\nWhat does the official record say?\n`;
+  return `${REPO_ISSUES}?title=${encodeURIComponent("Possible error: " + v.date + " " + (v.summary||v.title).slice(0,70))}&labels=data-error&body=${encodeURIComponent(body)}`;
+}
+const fmtShort = d => new Date(d + "T12:00:00").toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+function mediaSearchUrl(v){
+  // Built at update time from the item's three most distinctive title words.
+  // Routine items (minutes, bills, closed sessions) have none and get no search link.
+  return v.post_query ? `https://alamedapost.com/?s=${encodeURIComponent(v.post_query)}` : null;
+}
+
+function renderMembers(){
+  const grid = $('#memberGrid');
+  grid.innerHTML = DATA.members.map(m=>{
+    let aye=0,no=0,abst=0,abs=0,recused=0,dissent=0,present=0,served=0;
+    const catCount = {}, catDissent = {};
+    for(const v of DATA.votes){
+      // Only count votes where this member actually appears in the roll
+      // call -- most members served only part of the covered period, and
+      // stamping every vote outside their tenure as "absent" would make
+      // every historical member look like they missed almost everything.
+      if(!(m.short in v.votes)) continue;
+      served++;
+      const p = v.votes[m.short];
+      for(const c of catsOf(v)) catCount[c] = (catCount[c]||0)+1;
+      if(p==="absent"){abs++;continue;}
+      if(p==="recused"){recused++;continue;}
+      present++;
+      if(p==="aye")aye++; else if(p==="no")no++; else abst++;
+      if((p==="aye"||p==="no") && p!==majority(v)){ dissent++; for(const c of catsOf(v)) catDissent[c]=(catDissent[c]||0)+1; }
+    }
+    const pct = n => present? Math.round(100*n/present) : 0;
+    const topDissent = Object.entries(catDissent).sort((a,b)=>b[1]-a[1])[0];
+    const bars = CAT_ORDER.map(c=>{
+      const n = catCount[c]||0;
+      if(!n) return `<div class="bar-row" title="No votes in this category while ${esc(lastName(m))} was seated"><span class="bl">${esc(c)}</span><span class="bar"></span><span class="bn">–</span></div>`;
+      const dn = catDissent[c]||0;
+      const w = Math.round(100*dn/n);
+      return `<div class="bar-row${n<15?" low":""}" title="${dn} of ${n} votes in this category: ${esc(lastName(m))} was in the minority${n<15?" (small sample)":""}"><button class="bl" type="button" data-short="${esc(m.short)}" data-cat="${esc(c)}" title="See ${esc(m.name)}'s minority votes in ${esc(c)}">${esc(c)}</button><span class="bar"><i style="width:${w}%"></i></span><span class="bn">${w}%</span></div>`;
+    }).join("");
+    return `<div class="mcard" data-cur="${m.end?0:1}">
+      <button class="mname linklike" type="button" data-short="${esc(m.short)}" style="background:none;border:none;padding:0;font:inherit;text-align:left;color:var(--ink)">${esc(m.name)}</button>
+      <div class="mrole">${esc(roleLine(m))} · ${served} vote${served===1?"":"s"} on record</div>
+      <div class="mstats">
+        <div class="mstat"><div class="n">${pct(aye)}%</div><div class="l">Aye rate</div></div>
+        <div class="mstat"><div class="n">${dissent}</div><div class="l">Minority votes</div></div>
+        <div class="mstat"><div class="n">${abs}</div><div class="l">Absences${recused?` (+${recused} recused)`:""}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px">Minority-vote share by category (click a category)</div>
+      ${bars}
+      <div class="mnote">${topDissent ? `Most often in the minority on <strong>${esc(topDissent[0])}</strong> items (${topDissent[1]}×).` : `Voted with the majority on every recorded vote.`}</div>
+    </div>`;
+  }).join("");
+  const cards = [...grid.querySelectorAll('.mcard')];
+  const firstCur = cards.find(c=>c.dataset.cur==="1"), firstFormer = cards.find(c=>c.dataset.cur==="0");
+  const heading = (txt, note) => { const h = document.createElement('h2'); h.className = 'mgroup'; h.innerHTML = `${esc(txt)}<small>${esc(note)}</small>`; return h; };
+  if(firstCur) grid.insertBefore(heading("Current council", `${cards.filter(c=>c.dataset.cur==="1").length} members`), firstCur);
+  if(firstFormer) grid.insertBefore(heading("Former members", `${cards.filter(c=>c.dataset.cur==="0").length} members, 2013 onward`), firstFormer);
+  grid.querySelectorAll('.mname[data-short]').forEach(b=> b.onclick = () => goToMember(b.dataset.short));
+  grid.querySelectorAll('.bl[data-short]').forEach(b=> b.onclick = () => goToMemberCategoryDissent(b.dataset.short, b.dataset.cat));
+}
+
+function renderMatrix(){
+  const M = DATA.members;
+  const agree = (a,b)=>{
+    let same=0,total=0;
+    for(const v of DATA.votes){
+      const pa=v.votes[a.short], pb=v.votes[b.short];
+      if(!pa||!pb||pa==="absent"||pb==="absent"||pa==="recused"||pb==="recused") continue;
+      total++; if(pa===pb) same++;
+    }
+    nOf[a.short+"|"+b.short] = total;
+    return total? Math.round(100*same/total) : null;
+  };
+  const nOf = {};
+  const shade = p => {
+    if(p===null) return "";
+    // 70%→100% mapped onto teal-soft→teal
+    const t = Math.max(0,(p-70)/30);
+    const mix = Math.round(t*100);
+    // solid fallback first for browsers without color-mix() (iOS before 16.2), then the exact mix
+    const k = mix*0.55/100, lerp = (a,b) => Math.round(a + (b-a)*k);
+    const fb = `rgb(${lerp(227,20)},${lerp(238,96)},${lerp(240,111)})`;
+    return `background:${fb}; background:color-mix(in srgb, var(--teal) ${mix*0.55}%, var(--teal-soft)); ${mix>60?'color:#fff;':''}`;
+  };
+  let html = `<tr><th></th>${M.map(m=>`<th><button class="linklike" type="button" data-short="${esc(m.short)}" title="View ${esc(m.name)}'s record">${esc(lastName(m))}</button></th>`).join("")}</tr>`;
+  for(const a of M){
+    html += `<tr><th><button class="linklike" type="button" data-short="${esc(a.short)}" title="View ${esc(a.name)}'s record">${esc(lastName(a))}</button></th>`;
+    for(const b of M){
+      if(a.short===b.short){ html+=`<td class="self">—</td>`; continue; }
+      const p = agree(a,b);
+      html += p===null
+        ? `<td class="na">n/a</td>`
+        : `<td style="${shade(p)}"><button class="cell-btn" type="button" data-a="${esc(a.short)}" data-b="${esc(b.short)}" title="See where ${esc(lastName(a))} and ${esc(lastName(b))} disagreed (${nOf[a.short+"|"+b.short]} votes with both seated and present)">${p}%</button></td>`;
+    }
+    html += `</tr>`;
+  }
+  $('#matrixTable').innerHTML = html;
+  $('#matrixTable').querySelectorAll('button[data-short]').forEach(b=> b.onclick = () => goToMember(b.dataset.short));
+  $('#matrixTable').querySelectorAll('button.cell-btn').forEach(b=> b.onclick = () => goToCompare([b.dataset.a, b.dataset.b]));
+}
+
+function renderCats(){
+  const byCat = {};
+  for(const v of DATA.votes) for(const c of catsOf(v)) (byCat[c] ||= []).push(v);
+  const mainSet = new Set(DATA.votes.map(v=>v.category));
+  const ordered = Object.entries(byCat).sort((a,b)=> (mainSet.has(b[0])-mainSet.has(a[0])) || (b[1].length-a[1].length));
+  $('#catList').innerHTML = ordered.map(([c,vs])=>{
+    const passed = vs.filter(v=>v.result==="passed").length;
+    const uni = vs.filter(isUnanimous).length;
+    const divided = vs.filter(v=>!isUnanimous(v));
+    const dList = divided.slice(0,4).map(v=>{
+      const t=tally(v);
+      return `<li><span style="font-family:var(--mono)">${esc(v.date)}</span> — <a href="#vote=${esc(v.id)}" title="${esc(v.title)}">${esc(v.summary||v.title)}</a> <span style="font-family:var(--mono)">(${t.aye}–${t.no})</span></li>`;
+    }).join("");
+    return `<div class="cat-card">
+      <div class="cat-head"><h3>${esc(c)}${mainSet.has(c)?"":' <small style="font-weight:500;color:var(--ink-soft)">(topic tag)</small>'}</h3>
+        <span class="cat-meta">${vs.length} votes${(mainSet.has(c) && vs.some(v=>v.category!==c))?` (${vs.filter(v=>v.category===c).length} main, ${vs.filter(v=>v.category!==c).length} also)`:""} · ${passed} passed · ${Math.round(100*uni/vs.length)}% unanimous</span>
+      </div>
+      ${c==="Other"?`<div class="cat-note">Catch-all for items that don't match any topic pattern — not a topic itself. Try the search box on Roll Call to find something specific.</div>`:""}
+      ${divided.length? `<div class="cat-divided">Divided votes in this category:<ul>${dList}</ul>${divided.length>4?`<button class="linklike" data-cat="${esc(c)}">See all ${divided.length} divided ${esc(c)} votes →</button>`:""}</div>` : `<div class="cat-divided">Every recorded vote in this category was unanimous.</div>`}
+    </div>`;
+  }).join("");
+  document.querySelectorAll('#catList .linklike').forEach(b=> b.onclick = ()=>{
+    // jump to Roll Call pre-filtered
+    state.cat = new Set([b.dataset.cat]); state.outcome="divided";
+    document.querySelectorAll('.chip').forEach(x=>{ const on = x.dataset.cat===b.dataset.cat; x.classList.toggle('on',on); x.setAttribute('aria-pressed',on); });
+    $('#fOutcome').value = "divided";
+    document.querySelector('.tab[data-view="votes"]').click();
+    renderVotes();
+    window.scrollTo({top:0});
+  });
+}
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "5d098957490245348f5807d5e7cf3997"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

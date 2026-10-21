@@ -1,0 +1,75 @@
+<!doctype html><meta charset="utf-8"><body><pre id="out">running</pre><div id="host"></div>
+<script>
+const out=[]; const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function load(hash){return new Promise(res=>{const f=document.createElement('iframe');f.style.cssText='width:420px;height:700px';f.src='../../index.html'+hash;document.getElementById('host').innerHTML='';document.getElementById('host').appendChild(f);f.onload=async()=>{await sleep(1200);res(f);};});}
+const ok=(name,cond,extra='')=>out.push((cond?'PASS ':'FAIL ')+name+(extra?'  — '+extra:''));
+(async()=>{
+ try{
+  let f=await load(''); let w=f.contentWindow, d=f.contentDocument;
+  ok('details "More filters" starts closed', d.querySelector('#moreFilters')&&!d.querySelector('#moreFilters').open);
+  ok('active-filter strip hidden when nothing selected', d.querySelector('#activeFilters').hidden);
+  ok('first vote card has summary headline + official title + link', !!d.querySelector('.vtitle')&&!!d.querySelector('.vofficial')&&!!d.querySelector('.vlink'));
+  const firstVoteTop=d.querySelector('#voteList article').getBoundingClientRect().top;
+  out.push('INFO first vote top at 420px-wide viewport: '+Math.round(firstVoteTop)+'px');
+  ok('first vote starts on the first phone screen (under 650px)', firstVoteTop<650, Math.round(firstVoteTop)+'px');
+  // category chip -> active chip -> remove
+  const chip=[...d.querySelectorAll('#catChips .chip')].find(x=>x.textContent==='Housing'); chip.click(); await sleep(150);
+  ok('category chip shows active filter', !d.querySelector('#activeFilters').hidden && d.querySelector('#activeFilters').textContent.includes('Housing'));
+  ok('hash updated', w.location.hash.includes('cat=Housing'), w.location.hash);
+  d.querySelector('.af-x').click(); await sleep(150);
+  ok('removing chip clears filter', d.querySelector('#activeFilters').hidden && !w.location.hash.includes('cat='));
+  // search typed -> hash -> reload restores
+  w.eval("state.q='rent'; state.member='MV'; state.stance='dissent'; state.dateFrom='2022-01-01'; syncControls(); renderVotes();");
+  const h=w.location.hash; ok('multi-filter hash written', /q=rent/.test(h)&&/member=MV/.test(h)&&/stance=dissent/.test(h)&&/from=2022-01-01/.test(h), h);
+  f=await load(h); w=f.contentWindow; d=f.contentDocument;
+  ok('URL restores all filters', w.eval("state.q==='rent'&&state.member==='MV'&&state.stance==='dissent'&&state.dateFrom==='2022-01-01'")&&d.querySelector('#q').value==='rent'&&d.querySelector('#fStance').value==='dissent', d.querySelector('#countLine').textContent.slice(0,80));
+  // meeting video link
+  ok('meeting-level video link', w.eval("videoLinks({date:'2023-01-03'})[0].href")==='https://alameda.granicus.com/player/clip/3079');
+  ok('item-level video link carries entrytime', w.eval("videoLinks({date:'2018-05-01',video_at:['2178',4898]})[0].href")==='https://alameda.granicus.com/player/clip/2178?entrytime=4898');
+  ok('cards show a video link', [...d.querySelectorAll('#voteList a')].some(x=>/^watch (video|item)/i.test(x.textContent)&&x.href.startsWith('https://alameda.granicus.com/player/clip/')));
+  ok('YouTube item link and transcript anchor', w.eval("(()=>{const l=videoLinks({date:'2026-09-01',yt_at:['qG10IjwL1Ss',2929]});return l[0].href==='https://www.youtube.com/watch?v=qG10IjwL1Ss&t=2929s'&&l[0].label==='Watch item'&&l[1].href==='transcripts/2026-09-01.html#v=qG10IjwL1Ss&t=2929'})()"));
+  ok('consent-calendar link is labelled as such', w.eval("videoLinks({date:'2026-09-01',yt_at:['qG10IjwL1Ss',2870,'c']})[0].label")==='Watch consent calendar');
+  ok('captioned meeting without an item time links the whole video plus transcript', w.eval("(()=>{const l=videoLinks({date:'2026-09-01'});return l.length===2&&/granicus/.test(l[0].href)&&l[1].href==='transcripts/2026-09-01.html'})()"));
+  ok('transcript page exists and has timed paragraphs', await fetch('../../transcripts/2026-09-01.html').then(r=>r.text()).then(t=>t.includes('class="c"')&&t.includes('youtube.com/watch?v=qG10IjwL1Ss&amp;t=')));
+  ok('draft-minutes label only on meetings whose minutes are unapproved', w.eval("isDraft({date:'2026-09-15'})&&!isDraft({date:'2023-01-03'})")&&[...d.querySelectorAll('.draft-badge')].length>=0);
+  ok('no video link when a date has no recording', w.eval("videoLinks({date:'2019-01-05'}).length")===0);
+  // legacy links
+  f=await load('#compare=MV,TJ'); w=f.contentWindow; d=f.contentDocument;
+  ok('legacy #compare= still works', w.eval("state.compare.size===2")&&!d.querySelector('#compareSummary').hidden);
+  f=await load('#category=Housing'); w=f.contentWindow;
+  ok('legacy #category= still works', w.eval("state.cat.has('Housing')"));
+  f=await load('#member=TD'); w=f.contentWindow; d=f.contentDocument;
+  ok('legacy #member= still works', w.eval("state.member==='TD'")&&!d.querySelector('#fStance').hidden);
+  // permalink
+  f=await load(''); w=f.contentWindow; d=f.contentDocument;
+  const link=d.querySelector('.vlink'); const id=link.getAttribute('href').slice(6);
+  link.click(); await sleep(250);
+  ok('permalink opens single vote', w.eval("state.voteId")===id && d.querySelectorAll('#voteList article').length===1, d.querySelector('#countLine').textContent.slice(0,60));
+  d.querySelector('#allVotesBtn').click(); await sleep(200);
+  ok('"Show all votes" restores list', d.querySelectorAll('#voteList article').length>50 && !w.location.hash.includes('vote='));
+  // official title expander
+  const more=d.querySelector('.vo-more'); if(more){ const t=more.previousElementSibling; more.click(); ok('title expander toggles', t.classList.contains('open')&&more.textContent==='Show less'); }
+  // CSV
+  w.eval("state.cat=new Set(['Housing']); syncControls(); renderVotes();");
+  const expected=w.eval("filteredVotes().length");
+  w.eval("window.__csv=null; URL.createObjectURL=b=>{window.__csv=b;return 'blob:x'}; HTMLAnchorElement.prototype.click=function(){};downloadCsv();");
+  const text=await w.__csv.text();
+  const lines=text.replace(/^﻿/,'').split('\r\n');
+  ok('CSV has header + one row per matching vote', lines.length===expected+1 && /^date,category,also_tagged,result/.test(lines[0]), 'rows='+(lines.length-1)+' expected='+expected+' | header cols='+lines[0].split(',').length);
+  ok('CSV rows quote commas/quotes safely', lines.slice(1,40).every(l=>l.split('"').length%2===1));
+  // members grouping
+  f=await load(''); d=f.contentDocument; w=f.contentWindow;
+  d.querySelector('.tab[data-view="members"]').click(); await sleep(150);
+  const hs=[...d.querySelectorAll('.mgroup')].map(x=>x.textContent);
+  ok('Members tab grouped current/former', hs.length===2&&/Current council/.test(hs[0])&&/Former/.test(hs[1]), hs.join(' | '));
+  ok('low-sample bars flagged', d.querySelectorAll('.bar-row.low').length>0, d.querySelectorAll('.bar-row.low').length+' bars');
+  ok('bar tooltips present', !!d.querySelector('.bar-row[title*=" of "]'));
+  // categories tab uses summaries
+  d.querySelector('.tab[data-view="categories"]').click(); await sleep(100);
+  const li=d.querySelector('.cat-divided li a[title]'); ok('Categories divided list links the summary to its vote, with the full title as tooltip', !!li && li.textContent.trim().length>0 && li.title.length>0 && /^#vote=/.test(li.getAttribute('href')), li?li.textContent.slice(0,60)+' | tooltip: '+li.title.slice(0,40):'none');
+  // skip link
+  ok('skip link and main landmark present', !!d.querySelector('.skip-link')&&!!d.querySelector('main#main'));
+ }catch(e){out.push('ERROR '+e+' '+(e.stack||'').slice(0,300));}
+ document.getElementById('out').textContent=out.join('\n');
+})();
+</script>
