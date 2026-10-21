@@ -1,5 +1,7 @@
 # Alameda Roll Call
 
+Live site: https://alameda-rollcall.github.io/
+
 An independent, static voting record for the Alameda City Council: how each
 member voted on every recorded roll call since August 2013 (the start of
 Alameda's Legistar archive), searchable by member, topic and outcome, with each

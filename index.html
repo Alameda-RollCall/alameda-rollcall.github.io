@@ -370,7 +370,7 @@ footer{border-top:1px solid var(--hair);margin-top:30px;padding:16px 20px;text-a
       <h3>Categories</h3>
       <p>Each vote has one main category, assigned by rules from the item's title, and up to four dashed "also" tags where it clearly spans topics. Filters match either. The "also tagged" row holds cross-cutting topics (such as Labor & Workforce or Climate & Energy) and the place tag Alameda Point, which marks any item about the former Naval Air Station whatever its topic. Categories are navigation aids, not legal classifications.</p>
       <h3>Found a mistake?</h3>
-      <p>Every vote has a "Report an error" link that opens a pre-filled issue on the project's <a href="https://github.com/Alameda-RollCall/Alameda-RollCall/issues" rel="noopener">GitHub page</a>. Corrections are made in the scraper's rules, so one fix repairs every vote with the same pattern.</p>
+      <p>Every vote has a "Report an error" link that opens a pre-filled issue on the project's <a href="https://github.com/Alameda-RollCall/alameda-rollcall.github.io/issues" rel="noopener">GitHub page</a>. Corrections are made in the scraper's rules, so one fix repairs every vote with the same pattern.</p>
       <h3>Absent vs. recused</h3>
       <p>"Absent" means the member wasn't recorded as present for that vote. "Recused" means the minutes say the member stepped out over a conflict of interest, which is declining to take part, not missing a meeting. Some absences are unrecorded recusals, so check the record before drawing conclusions. A member is counted only for votes held while seated: a vote before someone took office or after they left is never an absence.</p>
       <h3>Privacy</h3>
@@ -1080,7 +1080,7 @@ function renderVotes(){
    Institute for Nonprofit News and is the closest thing Alameda has to a
    dedicated local-government beat reporter; this is a search stub, not a
    guaranteed match -- there may be no article for a given routine item. */
-const REPO_ISSUES = "https://github.com/Alameda-RollCall/Alameda-RollCall/issues/new";
+const REPO_ISSUES = "https://github.com/Alameda-RollCall/alameda-rollcall.github.io/issues/new";
 /* Pre-filled GitHub issue so a reader can flag a mistake in one click. */
 function reportUrl(v){
   const body = `Vote: ${v.id} (${v.date})\nTitle: ${v.title.slice(0,240)}\nMeeting record: ${v.url||""}\nLink on the site: ${location.origin}${location.pathname}#vote=${v.id}\n\nWhat looks wrong (positions, result, category, summary)?\n\nWhat does the official record say?\n`;
