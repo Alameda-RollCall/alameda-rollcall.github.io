@@ -14,6 +14,16 @@ for v in json.load(open(os.path.join(ROOT, "votes.json")))["votes"]:
     have[v["date"]] = have.get(v["date"], 0) + 1
 CLAUSE = re.compile(r"seconded|\bAyes?\s*[:\-]|roll call vote|unanimous", re.I)
 PROCEDURAL = re.compile(r"speaking|minutes? to|adjourn", re.I)
+# Reviewed by hand and intentionally without votes (no formal recorded vote).
+REVIEWED = {
+    "2013-09-25": "joint meeting; only a procedural vote to continue past 11 p.m.",
+    "2015-05-06": "only a procedural vote to continue the meeting",
+    "2017-02-17": "only a procedural speaking-time vote",
+    "2017-04-07": "rent ordinance direction by consensus (no motion); 'Council agreed' only",
+    "2017-10-21": "cannabis workshop straw polls ('Council voted as follows'), not formal motions",
+    "2019-01-05": "clerk date typo for 2019-11-05 (CLERK_DATE_FIXES); counted under the right date",
+    "2021-05-20": "only a procedural vote combining two workshops",
+}
 rows = {}
 for f in glob.glob(os.path.join(ROOT, "minutes_cache", "[0-9]*.json")):
     d = json.load(open(f))
@@ -24,7 +34,7 @@ for f in glob.glob(os.path.join(ROOT, "minutes_cache", "[0-9]*.json")):
         if "CITY COUNCIL" not in sec[:200].upper():
             continue
         date = s.parse_meeting_date(sec, matter_file=d.get("file"))
-        if date and date >= "2013-08-01" and not have.get(date) and len(CLAUSE.findall(sec)) >= 1:
+        if date and date >= "2013-08-01" and not have.get(date) and date not in REVIEWED and len(CLAUSE.findall(sec)) >= 1:
             rows[(date, os.path.basename(f))] = len(CLAUSE.findall(sec))
 for (date, f), n in sorted(rows.items()):
     print(f"{date}  {f}  {n} vote-like clauses, 0 votes recorded")
