@@ -813,6 +813,101 @@ CLERK_VOTE_FIXES = {
 }
 
 
+# Votes the parser cannot reach: special meetings minuted as free-form narrative
+# ("Councilmember X moved approval of ... Y seconded the motion, which carried by the
+# following roll call vote: ..."), with no numbered paragraph per motion, and
+# closed-session announcements that run several votes into one sentence. Each entry
+# was read against the minutes by hand. `anchor` is a phrase that appears only in that
+# meeting's section, so an entry fires once and only for its own meeting. Purely
+# procedural motions (speaking time, extending the meeting) are left out on purpose.
+EXTRA_VOTES = {
+    "2020-05-06": [
+        # Knox White's motion (restated by Vella): staff return the second meeting in June
+        # with charter language and ballot language; Daysog abstained.
+        {"anchor": "Ayes: 4; Abstention: 1.",
+         "title": "Recommendation to Provide Direction on Potential Measures Amending the City Charter Relating to Charter Section 7-3 - Counter Interference",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "abstain", "JO": "aye", "MV": "aye", "JKW": "aye"}},
+    ],
+    "2020-05-07": [
+        # The item's first vote (objecting to consideration, failed 2-2) is already
+        # recorded under the plain title; this is the motion that resolved it.
+        {"anchor": "restated his motion that Mayor Ezzy Ashcraft and Councilmember Oddie form a subcommittee",
+         "title": "Recommendation to Consider Providing Direction to City Staff to Draft Charter Amendment Related to Article 26 (Measure A) to Resolve Conflicts between Article 26 and the City of Alameda General Plan and Alameda Municipal Code - Motion to Form a Subcommittee",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "aye", "JO": "aye", "JKW": "aye", "MV": "absent"}},
+    ],
+    "2020-06-17": [
+        {"anchor": "motion related to former President Obama's Mayor's Pledge",
+         "title": "Recommendation that the City Council: (A) Authorize the Mayor to Sign-On to Former President Obama's Pledge to Introduce Common-Sense Limits on Police Use of Force",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "aye", "JO": "aye", "MV": "aye", "JKW": "aye"}},
+        {"anchor": "motion related to the \"8 Can't Wait\" initiative",
+         "title": "Recommendation that the City Council: (B) Authorize the City Manager, in Partnership with the Chief of Police, to Evaluate and Update Alameda Police Department Policies Related to the \"8 Can't Wait\" Initiative",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "aye", "JO": "aye", "MV": "aye", "JKW": "aye"}},
+    ],
+    "2020-06-29": [
+        {"anchor": "authorizing the creation of a steering committee comprised of Mayor Ezzy Ashcraft and Councilmember Vella",
+         "title": "Recommendation to Develop a Work Plan, including Community Dialogue, to Address the Following: 1. Unbundling Services Currently Delivered by the Police Department; 2. Systemic Racism; 3. a Review of Police Department Policies and Practices; 4. Police Department Accountability and Oversight; 5. a Review of Laws that Criminalize Survival; and 6. Other Matters which may be Pertinent, including Vacancies",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "aye", "JO": "aye", "MV": "aye", "JKW": "aye"}},
+    ],
+    "2020-07-14": [
+        # Vella's motion: City Manager to produce a public report on the policing
+        # investigation, identify training, and continue the resolution's wording to July 21.
+        {"anchor": "Councilmember Vella moved approval of directing the City Manager to produce a public report",
+         "title": "Consider Adoption of Resolution Declaring Racism a Public Health Emergency, including Identifying and Approving Direction to Staff Regarding Initial and Ongoing Actions to Address the Crisis. (Vice Mayor Knox White and Councilmember Oddie)",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "no", "JO": "aye", "MV": "aye", "JKW": "no"}},
+    ],
+    "2023-05-11": [
+        # Mayor Ezzy Ashcraft moved the urgency ordinance with South Shore included, then
+        # amended it to introduction of the regular ordinance (carried 3-1); the urgency
+        # ordinance itself then failed for lack of the four votes it needed.
+        {"anchor": "Under discussion, Mayor Ezzy Ashcraft amended the motion to introduction of the regular ordinance",
+         "title": "Introduction of an Uncodified Ordinance to Impose a Temporary Moratorium on Submitting Capital Improvement Plan Applications for Properties that have 25 or More Rental Units and Directing the Rent Program Administrator to Reject All Capital Improvement Plan Applications Filed On or After April 27, 2023",
+         "result": "passed",
+         "votes": {"MEA": "aye", "TD": "aye", "TJ": "aye", "THS": "no", "MV": "absent"}},
+        {"anchor": "which required four affirmative votes and therefore failed",
+         "title": "Adoption of an Uncodified Urgency Ordinance Imposing a Temporary Moratorium on Submitting Capital Improvement Plan Applications for Properties that have 25 or More Rental Units and Directing the Rent Program Administrator to Reject All Capital Improvement Plan Applications Filed On or After April 27, 2023",
+         "result": "failed",
+         "votes": {"MEA": "aye", "TD": "aye", "TJ": "aye", "THS": "no", "MV": "absent"}},
+    ],
+    "2018-04-16": [
+        # Closed-session announcement on the City Manager matter. A fourth litigation
+        # vote ("with three present, Council voted to give direction to staff") gives no
+        # tally, so it is not recorded.
+        {"anchor": "City Council unanimously voted to release, on Wednesday, May 2nd",
+         "title": "Closed Session - Litigation: Release the Jenkins investigative report on May 2",
+         "result": "passed",
+         "votes": {"MEA": "aye", "FM": "aye", "THS": "aye", "JO": "aye", "MV": "aye"}},
+        {"anchor": "City Council unanimously voted to release, on Wednesday, May 2nd",
+         "title": "Closed Session - Litigation: Refer the audio recordings to the Alameda County District Attorney",
+         "result": "passed",
+         "votes": {"MEA": "aye", "FM": "aye", "THS": "aye", "JO": "aye", "MV": "aye"}},
+        {"anchor": "City Council unanimously voted to release, on Wednesday, May 2nd",
+         "title": "Closed Session - Litigation: Direction to staff on one item",
+         "result": "passed",
+         "votes": {"MEA": "aye", "FM": "aye", "THS": "aye", "JO": "aye", "MV": "aye"}},
+        {"anchor": "City Council unanimously voted to release, on Wednesday, May 2nd",
+         "title": "Public Employee Performance Evaluation; Public Employee Dismissal/Release; Pursuant to California Government Code Section 54957; Employee/Position: Jill Keimach, City Manager",
+         "result": "passed",
+         "votes": {"MEA": "no", "FM": "no", "THS": "aye", "JO": "aye", "MV": "aye"}},
+    ],
+    "2021-03-09": [
+        {"anchor": "the first motion failed by the following roll call vote",
+         "title": "Conference with Real Property Negotiators (Pursuant to Government Code Section 54956.8); Property: Alameda Point, Site A, Alameda, CA; Negotiating Parties: City of Alameda and Alameda Point Partners, LLC; Under Negotiation: Price and Terms - First Motion",
+         "result": "failed",
+         "votes": {"TD": "aye", "THS": "aye", "JKW": "abstain", "MV": "no", "MEA": "no"}},
+        {"anchor": "the first motion failed by the following roll call vote",
+         "title": "Conference with Real Property Negotiators (Pursuant to Government Code Section 54956.8); Property: Alameda Point, Site A, Alameda, CA; Negotiating Parties: City of Alameda and Alameda Point Partners, LLC; Under Negotiation: Price and Terms - Second Motion",
+         "result": "passed",
+         "votes": {"TD": "aye", "THS": "no", "JKW": "aye", "MV": "aye", "MEA": "aye"}},
+    ],
+}
+
+
 def apply_clerk_fixes(date, title, positions, result):
     for (d, prefix), fix in CLERK_VOTE_FIXES.items():
         if d == date and title.startswith(prefix):
@@ -907,6 +1002,7 @@ def parse_minutes_text(plain, since, matter_file=None):
     starts = [m.start() for m in SECTION_RE.finditer(plain)]
     for i, s in enumerate(starts):
         section = plain[s:starts[i + 1] if i + 1 < len(starts) else len(plain)]
+        raw_section = section  # before announced closed-session paragraphs are blanked out
         header = section[:200].upper()
         if "CITY COUNCIL" not in header:
             continue  # SACIC-only or other body
@@ -1084,6 +1180,15 @@ def parse_minutes_text(plain, since, matter_file=None):
                 if len(full) > len(match[0]) + 2:
                     rec["title_full"] = full
             yield rec
+
+        flat = re.sub(r"\s+", " ", raw_section)
+        for ex in EXTRA_VOTES.get(date, ()):
+            if ex["anchor"] in flat:
+                rec = {"date": date, "title": ex["title"][:300], "result": ex["result"],
+                       "votes": dict(ex["votes"])}
+                if len(ex["title"]) > 302:
+                    rec["title_full"] = ex["title"]
+                yield rec
 
 # ------------------------------------------------------- annotation & output
 

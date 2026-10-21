@@ -36,6 +36,7 @@ It needs `minutes_cache/` (not committed), so it is a maintainer tool.
 venv/bin/python tests/data_audit/audit.py     # agenda items whose text has a vote clause but no recorded vote
 venv/bin/python tests/data_audit/audit_b.py   # each vote's last clause vs recorded positions (names, recusals, absences)
 venv/bin/python tests/data_audit/audit_c.py   # roll calls vs tenure, results vs counts, duplicate ids
+venv/bin/python tests/data_audit/audit_empty_meetings.py  # meetings with vote-like text but no recorded vote (free-form special meetings)
 ```
 
 Each prints a count per check and writes `audit_*.json` (to `$AUDIT_OUT`, default the

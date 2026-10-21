@@ -23,7 +23,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VOTES = os.path.join(HERE, "votes.json")
 CACHE = os.path.join(HERE, "yt_cache")
 CHANNEL = "https://www.youtube.com/channel/UCWAAYtmrO1FVgAT6DszOYXQ/videos"  # City of Alameda
-YTDLP = shutil.which("yt-dlp") or os.path.expanduser("~/.local/bin/yt-dlp")
+# Prefer the yt-dlp installed beside this Python (the venv): an old global copy can't read
+# YouTube's current channel page and silently lists nothing.
+_VENV_YTDLP = os.path.join(os.path.dirname(sys.executable), "yt-dlp")
+YTDLP = _VENV_YTDLP if os.path.exists(_VENV_YTDLP) else (
+    shutil.which("yt-dlp") or os.path.expanduser("~/.local/bin/yt-dlp"))
 SKIP_RE = re.compile(r"commission|board|town hall|authority|salaries|golf|planning", re.I)
 TITLE_RE = re.compile(r"(\d{4})[ -](\d{1,2})[ -](\d{1,2})\s+(special\s+)?(city\s+council|council)", re.I)
 
@@ -31,6 +35,9 @@ TITLE_RE = re.compile(r"(\d{4})[ -](\d{1,2})[ -](\d{1,2})\s+(special\s+)?(city\s
 def list_channel():
     out = subprocess.run([YTDLP, "--flat-playlist", "--print", "%(id)s|%(duration)s|%(title)s", CHANNEL],
                          capture_output=True, text=True, check=True).stdout
+    if not out.strip():
+        sys.exit(f"{YTDLP} listed no videos (version {subprocess.run([YTDLP, '--version'], capture_output=True, text=True).stdout.strip()}). "
+                 "Update it (venv/bin/pip install -U yt-dlp) and retry; votes.json was not touched.")
     found = {}
     for line in out.splitlines():
         vid, dur, title = line.split("|", 2)
@@ -47,6 +54,9 @@ def main():
     dates = {v["date"] for v in data["votes"]}
     found = list_channel()
     videos = {d: ids for d, ids in sorted(found.items()) if d in dates}
+    if len(videos) < len(data.get("meeting_youtube", {})) - 3:
+        sys.exit(f"only {len(videos)} meetings matched, votes.json already has {len(data.get('meeting_youtube', {}))}; "
+                 "refusing to drop links (transient YouTube error?). Retry.")
     skipped = sorted(set(found) - dates)
     print(f"{len(found)} council videos on the channel; {len(videos)} match a meeting in the data; unmatched dates: {skipped}")
     os.makedirs(CACHE, exist_ok=True)

@@ -130,6 +130,14 @@ venv/bin/python match_youtube_items.py                  # link votes to times in
 venv/bin/python build_transcripts.py                    # transcripts/<date>.html
 ```
 
+`annotate.py` rebuilds `votes.json` from scratch, so always rerun the press and video steps
+after it. `fetch_youtube.py` uses the `yt-dlp` beside the venv's Python (an old global copy
+lists nothing on YouTube's current pages); keep it current with
+`venv/bin/pip install -U yt-dlp`. The script exits without touching `votes.json` if the
+channel listing comes back empty or loses meetings. Afterwards run
+`venv/bin/python tests/data_audit/audit_empty_meetings.py`: it lists meetings whose minutes
+have vote clauses but no recorded vote (add those to `EXTRA_VOTES` in `scrape_votes.py`).
+
 Then **spot-check** a few new votes against the meeting record before
 committing `votes.json`.
 
