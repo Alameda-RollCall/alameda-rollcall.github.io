@@ -38,6 +38,7 @@ const ok=(name,cond,extra='')=>out.push((cond?'PASS ':'FAIL ')+name+(extra?'  â€
   ok('legacy #compare= still works', w.eval("state.compare.size===2")&&!d.querySelector('#compareSummary').hidden);
   f=await load('#compare=TD,MEA'); w=f.contentWindow; d=f.contentDocument;
   ok('compare summary lists main categories and also-tagged topics', (()=>{const c=d.querySelector('#compareSummary'); return c.querySelectorAll('table').length===2 && /Also-tagged topics/.test(c.textContent) && [...c.querySelectorAll('table:nth-of-type(2) td:first-child')].some(td=>td.textContent==='Alameda Point');})());
+  ok('compare summary shades topics with under 80% agreement', w.eval("(()=>{const r=[...document.querySelectorAll('#compareSummary tr')];return r.every(tr=>{const m=/(\\d+)% agree/.exec(tr.textContent),n=/(\\d+) vote/.exec(tr.textContent);return !m||tr.classList.contains('dis')===(+n[1]>=8&&+m[1]<80)})&&r.length>0})()")&&true);
   f=await load('#category=Housing'); w=f.contentWindow;
   ok('legacy #category= still works', w.eval("state.cat.has('Housing')"));
   f=await load('#member=TD'); w=f.contentWindow; d=f.contentDocument;
