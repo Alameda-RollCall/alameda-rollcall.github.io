@@ -93,10 +93,12 @@ input[type=search],input[type=date],select{font:inherit;padding:8px 10px;border:
 .compare-summary .cs-sort{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:13px;color:var(--ink-soft)}
 .compare-summary .cs-sort button{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--hair);background:var(--paper);color:var(--ink-soft);border-radius:999px;min-height:32px}
 .compare-summary .cs-sort button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
-.compare-summary .cs-topic{font:inherit;color:var(--teal);background:none;border:0;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.compare-summary .cs-topic,.compare-summary .cs-link{font:inherit;color:var(--teal);background:none;border:0;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .compare-summary tr.dis .cs-topic{color:inherit}
+.compare-summary .cs-link[aria-pressed=true]{font-weight:700;text-decoration-thickness:2px}
+.compare-summary .cs-head .cs-link{font-weight:600}
 .compare-summary .cs-topic[aria-pressed=true]{font-weight:700;text-decoration-thickness:2px}
-@media (pointer:coarse){.compare-summary .cs-topic{min-height:32px;padding:4px 0}}
+@media (pointer:coarse){.compare-summary .cs-topic{min-height:32px;padding:4px 0}.compare-summary .cs-link{min-height:32px;padding:4px 2px}.vdate-btn,.vres-btn,.stat-link{min-height:32px;padding:4px 2px}}
 .compare-summary tr.few td{color:var(--abs-text)}
 .compare-summary .dis-tag{font-weight:600;font-size:12px;margin-left:6px}
 input[type=search]{flex:1;min-width:180px}
@@ -192,6 +194,10 @@ mark.hl{background:#FFE9A8;color:inherit;border-radius:2px;padding:0 1px}
 }
 .vcat-also{background:transparent;color:var(--ink-soft);border:1px dashed var(--hair);font-weight:500;font-size:12px}
 .vcat-also:hover{background:var(--teal-soft);color:var(--teal)}
+.vdate-btn,.vres-btn,.stat-link{background:none;border:0;padding:0;cursor:pointer;text-underline-offset:2px}
+.vdate-btn:hover,.vres-btn:hover,.stat-link:hover{text-decoration:underline}
+.stat-link{font:inherit;color:inherit}
+.stat-link strong{text-decoration:underline;text-underline-offset:2px}
 .vresult{margin-left:auto;font-family:var(--mono);font-size:12px;font-weight:600}
 .vresult.passed{color:var(--aye)}
 .vresult.failed{color:var(--no)}
@@ -483,7 +489,7 @@ const roleLine = m => {
   return m.candidacy_2026 ? `${base} · Candidate for ${m.candidacy_2026}, 2026` : base;
 };
 
-const state = { q:"", cat:new Set(), outcome:"", member:"", stance:"", sort:"new", hideUnanimous:false, compare:new Set(), dateFrom:"", dateTo:"", eras:new Set(), voteId:"" };
+const state = { q:"", cat:new Set(), outcome:"", member:"", stance:"", sort:"new", hideUnanimous:false, compare:new Set(), dateFrom:"", dateTo:"", eras:new Set(), voteId:"", splitKind:"" };
 /* Summaries cut to 25 words end in "…": hover shows the full text, tap/click expands it in place. */
 /* Escape text and wrap occurrences of the current search in <mark>. */
 function hl(text){
@@ -580,8 +586,8 @@ function compareSummary(shorts){
   for(const v of base) for(const c of (v.also||[])){ const t = (alsoCats[c] ||= {n:0,a:0}); t.n++; if(same(v)) t.a++; }
   const alsoRows = tagRows(alsoCats);
   const small = n < 30 ? ` <span class="warn">Small sample (${n} votes): read the percentage with caution.</span>` : "";
-  return {n, html: `<div class="cs-head">${esc(names.join(" vs. "))}: ${Math.round(100*agree/n)}% agreement (${agree} of ${n} votes)</div>
-    <div class="cs-sub">Window with all selected members seated and present: ${esc(dates[0])} to ${esc(dates[n-1])}. ${hard} hard split${hard===1?"":"s"} (aye vs. no), ${abst} involving an abstention. Absences and recusals are excluded. The first table uses each vote's main category. Shaded rows are topics where they agreed on under 80% of at least 8 votes.${small}</div>
+  return {n, html: `<div class="cs-head">${shorts.map((s,i)=>`<button type="button" class="cs-link cs-member" data-short="${esc(s)}" title="View ${esc(names[i])}'s voting record">${esc(names[i])}</button>`).join(" vs. ")}: ${Math.round(100*agree/n)}% agreement (${agree} of ${n} votes)</div>
+    <div class="cs-sub">Window with all selected members seated and present: ${esc(dates[0])} to ${esc(dates[n-1])}. <button type="button" class="cs-link cs-split" data-split="hard" aria-pressed="${state.splitKind==="hard"}" title="Show only the votes where someone voted aye and someone voted no">${hard} hard split${hard===1?"":"s"}</button> (aye vs. no), <button type="button" class="cs-link cs-split" data-split="abst" aria-pressed="${state.splitKind==="abst"}" title="Show only the splits that involve an abstention">${abst} involving an abstention</button>. Absences and recusals are excluded. The first table uses each vote's main category. Shaded rows are topics where they agreed on under 80% of at least 8 votes.${small}</div>
     <div class="cs-sort" role="group" aria-label="Sort topics">Sort topics: <button type="button" data-sort="count" aria-pressed="${compareSort==="count"}">Most votes</button><button type="button" data-sort="agree" aria-pressed="${compareSort==="agree"}">Least agreement</button></div>
     <table>${rows}</table>
     ${alsoRows ? `<div class="cs-sub"><strong>Also-tagged topics.</strong> Votes can carry several secondary tags, so these rows overlap each other and the categories above.</div><table>${alsoRows}</table>` : ""}`};
@@ -620,7 +626,7 @@ async function init(){
    member or category can be shared/bookmarked as its own URL. */
 function resetState(){
   state.q=""; state.cat.clear(); state.outcome=""; state.member=""; state.stance=""; state.sort="new";
-  state.hideUnanimous=false; state.compare.clear(); state.dateFrom=""; state.dateTo=""; state.eras.clear(); state.voteId="";
+  state.hideUnanimous=false; state.compare.clear(); state.dateFrom=""; state.dateTo=""; state.eras.clear(); state.voteId=""; state.splitKind="";
 }
 
 /* Every filter lives in the URL hash, so any view can be bookmarked or shared:
@@ -640,6 +646,7 @@ function stateToHash(){
   if(state.dateTo) p.set('to', state.dateTo);
   if(state.eras.size) p.set('era', [...state.eras].join(','));
   if(state.compare.size) p.set('cmp', [...state.compare].join(','));
+  if(state.splitKind) p.set('split', state.splitKind);
   return p.toString();
 }
 let hashLive = false;   // stay quiet until the initial #hash has been read
@@ -651,7 +658,7 @@ function writeHash(){
 }
 function applyHash(){
   const h = new URLSearchParams(location.hash.slice(1));
-  const keys = ['vote','q','cat','outcome','member','stance','sort','hide','from','to','era','cmp','category','compare'];
+  const keys = ['vote','q','cat','outcome','member','stance','sort','hide','from','to','era','cmp','category','compare','split'];
   if(!keys.some(k => h.has(k))){ resetState(); syncControls(); renderVotes(); return; }
   resetState();
   state.voteId = h.get('vote') || "";
@@ -667,6 +674,7 @@ function applyHash(){
   (h.get('era') || "").split(',').filter(k => ERAS_BY_KEY[k]).forEach(k => state.eras.add(k));
   (h.get('cmp') || h.get('compare') || "").split(',').filter(s => MBY[s]).forEach(s => state.compare.add(s));
   if(state.compare.size < 2) state.compare.clear();
+  else if(['hard','abst'].includes(h.get('split'))) state.splitKind = h.get('split');
   switchTab('votes');
   syncControls();
   renderVotes();
@@ -705,7 +713,8 @@ function activeFilters(){
   if(state.hideUnanimous) out.push({label:"Hiding unanimous votes", clear:()=>{state.hideUnanimous=false;}});
   if(state.dateFrom || state.dateTo) out.push({label:`${state.dateFrom||"…"} to ${state.dateTo||"…"}`, clear:()=>{state.dateFrom=""; state.dateTo="";}});
   for(const k of state.eras){ const e = ERAS_BY_KEY[k]; if(e) out.push({label:`Council ${e.start.slice(0,4)}–${e.end.slice(0,4)}`, clear:()=>{state.eras.delete(k);}}); }
-  if(state.compare.size >= 2) out.push({label:`Comparing ${[...state.compare].map(name).join(" vs. ")}`, clear:()=>{state.compare.clear();}});
+  if(state.compare.size >= 2) out.push({label:`Comparing ${[...state.compare].map(name).join(" vs. ")}`, clear:()=>{state.compare.clear(); state.splitKind="";}});
+  if(state.compare.size >= 2 && state.splitKind) out.push({label:state.splitKind==="hard" ? "Only aye vs. no splits" : "Only splits with an abstention", clear:()=>{state.splitKind="";}});
   return out;
 }
 function renderActiveFilters(){
@@ -944,9 +953,12 @@ function renderStats(){
   $('#statsBand').innerHTML =
     `<strong>${esc(vs.length)}</strong> roll-call votes · `
     + `<strong>${esc(first.slice(0,7))}</strong> → <strong>${esc(last.slice(0,7))}</strong> · `
-    + `<strong>${esc(Math.round(100*uni/Math.max(1,vs.length)))}%</strong> unanimous · `
-    + `<strong>${esc(divided)}</strong> divided · `
+    + `<button type="button" class="stat-link" data-outcome="unanimous" title="Show the unanimous votes"><strong>${esc(Math.round(100*uni/Math.max(1,vs.length)))}%</strong> unanimous</button> · `
+    + `<button type="button" class="stat-link" data-outcome="divided" title="Show the divided votes"><strong>${esc(divided)}</strong> divided</button> · `
     + `<strong>${esc(DATA.members.length)}</strong> members covered (all-time)`;
+  $('#statsBand').querySelectorAll('.stat-link').forEach(b => b.onclick = () => {
+    resetState(); state.outcome = b.dataset.outcome; switchTab('votes'); syncControls(); renderVotes(); window.scrollTo({top:0});
+  });
 }
 
 function filteredVotes(){
@@ -975,6 +987,10 @@ function filteredVotes(){
       const positions = shorts.map(s => v.votes[s]);
       if(positions.some(p => p==="absent" || p==="recused")) return false;
       if(positions.every(p => p===positions[0])) return false;
+      if(state.splitKind){
+        const hardSplit = positions.includes("aye") && positions.includes("no");
+        if((state.splitKind==="hard") !== hardSplit) return false;
+      }
     }
     if(state.member){
       // Gate on the member actually appearing in this vote's own roll call --
@@ -999,7 +1015,7 @@ let pageShown = PAGE_SIZE, pageFilterKey = "";
 
 function renderVotes(){
   const vsAll = filteredVotes();
-  const filterKey = JSON.stringify([state.q,[...state.cat],state.outcome,state.member,state.stance,state.sort,state.hideUnanimous,[...state.compare],state.dateFrom,state.dateTo,[...state.eras]]);
+  const filterKey = JSON.stringify([state.q,[...state.cat],state.outcome,state.member,state.stance,state.sort,state.hideUnanimous,[...state.compare],state.splitKind,state.dateFrom,state.dateTo,[...state.eras]]);
   if(filterKey !== pageFilterKey){ pageFilterKey = filterKey; pageShown = PAGE_SIZE; }
   const vs = vsAll.slice(0, pageShown);
   const note = $('#compareNote');
@@ -1015,6 +1031,15 @@ function renderVotes(){
         if(state.cat.size === 1 && state.cat.has(c)) state.cat.clear(); else state.cat = new Set([c]);
         syncControls(); renderVotes();
         cs.querySelector(`.cs-topic[data-cat="${CSS.escape(c)}"]`)?.focus();
+        return;
+      }
+      const mb = e.target.closest('.cs-member');
+      if(mb){ goToMember(mb.dataset.short); return; }
+      const sp = e.target.closest('.cs-split');
+      if(sp){
+        state.splitKind = state.splitKind === sp.dataset.split ? "" : sp.dataset.split;
+        syncControls(); renderVotes();
+        cs.querySelector(`.cs-split[data-split="${sp.dataset.split}"]`)?.focus();
         return;
       }
       const b = e.target.closest('.cs-sort button'); if(!b) return;
@@ -1094,9 +1119,9 @@ function renderVotes(){
     const spine = Object.keys(v.votes).map(s => `<i class="${esc(v.votes[s])}"></i>`).join("");
     return `<article class="vote${isUnanimous(v)?"":" divided"}"><span class="spine" aria-hidden="true">${spine}</span>
       <div class="vote-top">
-        <span class="vdate">${esc(v.date)}</span>
+        <button type="button" class="vdate vdate-btn" data-date="${esc(v.date)}" title="See every vote from the ${esc(v.date)} meeting">${esc(v.date)}</button>
         <button class="vcat" type="button" data-cat="${esc(v.category)}" title="Main category. See all ${esc(v.category)} votes">${esc(v.category)}</button>${(v.also||[]).map(c=>`<button class="vcat vcat-also" type="button" data-cat="${esc(c)}" title="Also related to ${esc(c)}. See all ${esc(c)} votes">+ ${esc(c)}</button>`).join("")}
-        <span class="vresult ${esc(v.result)}">${v.result==="passed"?"Passed":"Failed"} ${t.aye}–${t.no}</span>
+        <button type="button" class="vresult vres-btn ${esc(v.result)}" data-outcome="${esc(v.result)}" title="Show only ${v.result==="passed"?"passed":"failed"} votes">${v.result==="passed"?"Passed":"Failed"} ${t.aye}–${t.no}</button>
       </div>
       <div class="vtitle">${summaryHtml(v)}</div>
       <div class="vofficial"><span class="vo-label">Official title</span> ${hl(v.title)}</div>${v.title.length > 50 ? `<button type="button" class="vo-more" aria-expanded="false">Show full title</button>` : ""}
@@ -1123,6 +1148,14 @@ function renderVotes(){
     panel.hidden = !open;
     b.setAttribute('aria-expanded', String(open));
     b.textContent = open ? "Alameda Post council stories ▴" : "Alameda Post council stories ▾";
+  });
+  list.querySelectorAll('.vdate-btn').forEach(b=> b.onclick = () => {
+    resetState(); state.dateFrom = state.dateTo = b.dataset.date;
+    syncControls(); renderVotes(); window.scrollTo({top:0});
+  });
+  list.querySelectorAll('.vres-btn').forEach(b=> b.onclick = () => {
+    state.outcome = state.outcome === b.dataset.outcome ? "" : b.dataset.outcome;
+    syncControls(); renderVotes(); window.scrollTo({top:0});
   });
   list.querySelectorAll('.rc[data-short]').forEach(b=> b.onclick = () => goToMember(b.dataset.short));
   list.querySelectorAll('.vcat[data-cat], .vcat-also[data-cat]').forEach(b=> b.onclick = () => goToCategory(b.dataset.cat));
@@ -1251,20 +1284,18 @@ function renderCats(){
       return `<li><span style="font-family:var(--mono)">${esc(v.date)}</span> — <a href="#vote=${esc(v.id)}" title="${esc(v.title)}">${esc(v.summary||v.title)}</a> <span style="font-family:var(--mono)">(${t.aye}–${t.no})</span></li>`;
     }).join("");
     return `<div class="cat-card">
-      <div class="cat-head"><h3>${esc(c)}${mainSet.has(c)?"":' <small style="font-weight:500;color:var(--ink-soft)">(topic tag)</small>'}</h3>
-        <span class="cat-meta">${vs.length} votes${(mainSet.has(c) && vs.some(v=>v.category!==c))?` (${vs.filter(v=>v.category===c).length} main, ${vs.filter(v=>v.category!==c).length} also)`:""} · ${passed} passed · ${Math.round(100*uni/vs.length)}% unanimous</span>
+      <div class="cat-head"><h3><button class="linklike cat-all" type="button" data-cat="${esc(c)}" style="font:inherit" title="See all ${vs.length} ${esc(c)} votes">${esc(c)}</button>${mainSet.has(c)?"":' <small style="font-weight:500;color:var(--ink-soft)">(topic tag)</small>'}</h3>
+        <span class="cat-meta"><button class="linklike cat-all" type="button" data-cat="${esc(c)}" style="font:inherit" title="See all ${vs.length} ${esc(c)} votes">${vs.length} votes</button>${(mainSet.has(c) && vs.some(v=>v.category!==c))?` (${vs.filter(v=>v.category===c).length} main, ${vs.filter(v=>v.category!==c).length} also)`:""} · ${passed} passed · ${Math.round(100*uni/vs.length)}% unanimous</span>
       </div>
       ${c==="Other"?`<div class="cat-note">Catch-all for items that don't match any topic pattern — not a topic itself. Try the search box on Roll Call to find something specific.</div>`:""}
-      ${divided.length? `<div class="cat-divided">Divided votes in this category:<ul>${dList}</ul>${divided.length>4?`<button class="linklike" data-cat="${esc(c)}">See all ${divided.length} divided ${esc(c)} votes →</button>`:""}</div>` : `<div class="cat-divided">Every recorded vote in this category was unanimous.</div>`}
+      ${divided.length? `<div class="cat-divided">Divided votes in this category:<ul>${dList}</ul>${divided.length>4?`<button class="linklike cat-div" data-cat="${esc(c)}">See all ${divided.length} divided ${esc(c)} votes →</button>`:""}</div>` : `<div class="cat-divided">Every recorded vote in this category was unanimous.</div>`}
     </div>`;
   }).join("");
   document.querySelectorAll('#catList .linklike').forEach(b=> b.onclick = ()=>{
-    // jump to Roll Call pre-filtered
-    state.cat = new Set([b.dataset.cat]); state.outcome="divided";
-    document.querySelectorAll('.chip').forEach(x=>{ const on = x.dataset.cat===b.dataset.cat; x.classList.toggle('on',on); x.setAttribute('aria-pressed',on); });
-    $('#fOutcome').value = "divided";
-    document.querySelector('.tab[data-view="votes"]').click();
-    renderVotes();
+    // jump to Roll Call filtered to this category (all its votes, or only the divided ones)
+    resetState(); state.cat = new Set([b.dataset.cat]);
+    if(b.classList.contains('cat-div')) state.outcome = "divided";
+    switchTab('votes'); syncControls(); renderVotes();
     window.scrollTo({top:0});
   });
 }
