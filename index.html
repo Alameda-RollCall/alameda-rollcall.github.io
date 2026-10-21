@@ -93,6 +93,10 @@ input[type=search],input[type=date],select{font:inherit;padding:8px 10px;border:
 .compare-summary .cs-sort{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:13px;color:var(--ink-soft)}
 .compare-summary .cs-sort button{font:inherit;font-size:13px;padding:4px 10px;border:1px solid var(--hair);background:var(--paper);color:var(--ink-soft);border-radius:999px;min-height:32px}
 .compare-summary .cs-sort button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
+.compare-summary .cs-topic{font:inherit;color:var(--teal);background:none;border:0;padding:0;text-align:left;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.compare-summary tr.dis .cs-topic{color:inherit}
+.compare-summary .cs-topic[aria-pressed=true]{font-weight:700;text-decoration-thickness:2px}
+@media (pointer:coarse){.compare-summary .cs-topic{min-height:32px;padding:4px 0}}
 .compare-summary tr.few td{color:var(--abs-text)}
 .compare-summary .dis-tag{font-weight:600;font-size:12px;margin-left:6px}
 input[type=search]{flex:1;min-width:180px}
@@ -567,7 +571,7 @@ function compareSummary(shorts){
   const tagRows = o => Object.entries(o).sort(order).map(([c,x]) => {
     const cls = isDis(x) ? ' class="dis"' : (compareSort === "agree" && few(x) ? ' class="few"' : '');
     const note = isDis(x) ? '<span class="dis-tag">disagree often</span>' : (compareSort === "agree" && few(x) ? '<span class="dis-tag">few votes</span>' : '');
-    return `<tr${cls}><td>${esc(c)}</td><td>${pct(x)}% agree${note}</td><td>${x.n} vote${x.n===1?"":"s"}</td></tr>`;
+    return `<tr${cls}><td><button type="button" class="cs-topic" data-cat="${esc(c)}" aria-pressed="${state.cat.has(c)}" title="${state.cat.has(c) ? "Showing only" : "Show only"} ${esc(c)} votes where they disagreed">${esc(c)}</button></td><td>${pct(x)}% agree${note}</td><td>${x.n} vote${x.n===1?"":"s"}</td></tr>`;
   }).join("");
   const rows = tagRows(cats);
   // Secondary ("also") tags: a vote can carry several, so these rows overlap each other
@@ -1005,6 +1009,14 @@ function renderVotes(){
     note.hidden = false;
     const cs = $('#compareSummary'); cs.innerHTML = compareSummary([...state.compare]).html; cs.hidden = false;
     cs.onclick = e => {
+      const t = e.target.closest('.cs-topic');
+      if(t){   // filter the list below to this topic (main or also tag), keeping the comparison
+        const c = t.dataset.cat;
+        if(state.cat.size === 1 && state.cat.has(c)) state.cat.clear(); else state.cat = new Set([c]);
+        syncControls(); renderVotes();
+        cs.querySelector(`.cs-topic[data-cat="${CSS.escape(c)}"]`)?.focus();
+        return;
+      }
       const b = e.target.closest('.cs-sort button'); if(!b) return;
       compareSort = b.dataset.sort; cs.innerHTML = compareSummary([...state.compare]).html;
       cs.querySelector(`.cs-sort button[data-sort="${compareSort}"]`)?.focus();

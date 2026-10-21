@@ -41,6 +41,10 @@ const ok=(name,cond,extra='')=>out.push((cond?'PASS ':'FAIL ')+name+(extra?'  â€
   ok('compare summary shades topics with under 80% agreement', w.eval("(()=>{const r=[...document.querySelectorAll('#compareSummary tr')];return r.every(tr=>{const m=/(\\d+)% agree/.exec(tr.textContent),n=/(\\d+) vote/.exec(tr.textContent);return !m||tr.classList.contains('dis')===(+n[1]>=8&&+m[1]<80)})&&r.length>0})()")&&true);
   d.querySelector('#compareSummary .cs-sort button[data-sort="agree"]').click();
   ok('least-agreement sort puts well-sampled topics first, lowest percent first', w.eval("(()=>{const r=[...document.querySelectorAll('#compareSummary table:first-of-type tr')].map(tr=>({p:+/(\\d+)% agree/.exec(tr.textContent)[1],n:+/(\\d+) vote/.exec(tr.textContent)[1]}));const big=r.filter(x=>x.n>=8);return big.every((x,i)=>i===0||big[i-1].p<=x.p)&&r.slice(0,big.length).every(x=>x.n>=8)})()"));
+  d.querySelector('#compareSummary .cs-topic[data-cat="Housing"]').click(); await sleep(250);
+  ok('clicking a topic in the compare summary filters to it and keeps the comparison', w.eval("state.cat.size===1&&state.cat.has('Housing')&&state.compare.size===2")&&d.querySelector('#compareSummary .cs-topic[data-cat="Housing"]').getAttribute('aria-pressed')==='true');
+  d.querySelector('#compareSummary .cs-topic[data-cat="Housing"]').click(); await sleep(250);
+  ok('clicking it again clears the topic filter', w.eval("state.cat.size===0&&state.compare.size===2"));
   f=await load('#category=Housing'); w=f.contentWindow;
   ok('legacy #category= still works', w.eval("state.cat.has('Housing')"));
   f=await load('#member=TD'); w=f.contentWindow; d=f.contentDocument;
