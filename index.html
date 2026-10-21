@@ -547,12 +547,19 @@ function compareSummary(shorts){
   const abst = split.length - hard;
   const cats = {};
   for(const v of base){ const c = (cats[v.category] ||= {n:0,a:0}); c.n++; if(same(v)) c.a++; }
-  const rows = Object.entries(cats).sort((a,b)=>b[1].n-a[1].n).map(([c,x]) =>
+  const tagRows = o => Object.entries(o).sort((a,b)=>b[1].n-a[1].n || a[0].localeCompare(b[0])).map(([c,x]) =>
     `<tr><td>${esc(c)}</td><td>${Math.round(100*x.a/x.n)}% agree</td><td>${x.n} vote${x.n===1?"":"s"}</td></tr>`).join("");
+  const rows = tagRows(cats);
+  // Secondary ("also") tags: a vote can carry several, so these rows overlap each other
+  // and the main-category rows above.
+  const alsoCats = {};
+  for(const v of base) for(const c of (v.also||[])){ const t = (alsoCats[c] ||= {n:0,a:0}); t.n++; if(same(v)) t.a++; }
+  const alsoRows = tagRows(alsoCats);
   const small = n < 30 ? ` <span class="warn">Small sample (${n} votes): read the percentage with caution.</span>` : "";
   return {n, html: `<div class="cs-head">${esc(names.join(" vs. "))}: ${Math.round(100*agree/n)}% agreement (${agree} of ${n} votes)</div>
-    <div class="cs-sub">Window with all selected members seated and present: ${esc(dates[0])} to ${esc(dates[n-1])}. ${hard} hard split${hard===1?"":"s"} (aye vs. no), ${abst} involving an abstention. Absences and recusals are excluded. Categories below use each vote's main category.${small}</div>
-    <table>${rows}</table>`};
+    <div class="cs-sub">Window with all selected members seated and present: ${esc(dates[0])} to ${esc(dates[n-1])}. ${hard} hard split${hard===1?"":"s"} (aye vs. no), ${abst} involving an abstention. Absences and recusals are excluded. The first table uses each vote's main category.${small}</div>
+    <table>${rows}</table>
+    ${alsoRows ? `<div class="cs-sub"><strong>Also-tagged topics.</strong> Votes can carry several secondary tags, so these rows overlap each other and the categories above.</div><table>${alsoRows}</table>` : ""}`};
 }
 
 function goToCompare(shorts, opts={}){
