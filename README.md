@@ -206,6 +206,7 @@ hand-written override files.
 | `fetch_videos.py`, `fetch_granicus_index.py`, `match_video_items.py` | Meeting video links and item start times (Granicus) |
 | `fetch_youtube.py`, `ytcaptions.py`, `match_youtube_items.py`, `build_transcripts.py` | YouTube captions: item times and `transcripts/` |
 | `transcripts/` | Generated transcript pages, one per captioned meeting (about 8 MB) |
+| `og-image.png` | The preview image shown when the site's link is shared (1200 by 630) |
 | `fonts/` | The site's typefaces (Public Sans, Zilla Slab; Latin subset, about 78 KB) with their license texts, hosted here so visitors make no request to Google |
 | `.nojekyll` | Tells GitHub Pages to serve the folders as they are |
 | `jsonio.py` | Compact, diff-friendly JSON writer |
